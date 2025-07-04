@@ -1,4 +1,4 @@
-# ContractAI – Sistema de Análise e Consulta de Contratos com LLM
+# Novo Verificador de Cláusulas Contratuais (VCC) – Sistema de Análise e Consulta de Contratos com LLM
 
 Este projeto é uma plataforma em Python que utiliza modelos de linguagem (LLMs), busca vetorial e uma interface interativa para **processar, analisar e consultar contratos jurídicos** de forma inteligente.
 
