@@ -12,6 +12,8 @@ openai = "*"
 streamlit = "*"
 SQLAlchemy = "*"
 python-dotenv = "*"
+PyMuPDF = "*"
+python-docx = "*"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
