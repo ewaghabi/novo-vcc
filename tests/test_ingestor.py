@@ -31,6 +31,7 @@ class DummyVectorStore:
     def __init__(self):
         self.added = []
         self.persist_called = False
+        self.cleared = False
 
     def add_document(self, text, metadata=None):
         self.added.append((text, metadata))
@@ -38,13 +39,40 @@ class DummyVectorStore:
     def persist(self):
         self.persist_called = True
 
+    def clear(self):
+        self.cleared = True
+
 
 class DummyRelationalDB:
     def __init__(self):
         self.contracts = []
 
-    def add_contract(self, name, path, ingestion_date=None):
-        self.contracts.append((name, path, ingestion_date))
+    def add_contract(
+        self,
+        name,
+        path,
+        ingestion_date=None,
+        last_processed=None,
+    ):
+        self.contracts.append(
+            {
+                "name": name,
+                "path": path,
+                "ingestion_date": ingestion_date,
+                "last_processed": last_processed,
+            }
+        )
+
+    def get_contract_by_path(self, path):
+        for c in self.contracts:
+            if c["path"] == path:
+                return c
+        return None
+
+    def update_processing_date(self, path, processing_date=None):
+        c = self.get_contract_by_path(path)
+        if c:
+            c["last_processed"] = processing_date or datetime.utcnow()
 
 
 def create_sample_pdf(path: Path, text: str):
@@ -96,6 +124,67 @@ def test_ingest_processes_files(monkeypatch, tmp_path):
     ]
     assert sorted(vec.added, key=lambda x: x[0]) == sorted(expected, key=lambda x: x[0])
     assert vec.persist_called
-    names = sorted(c[0] for c in db.contracts)
+    names = sorted(c["name"] for c in db.contracts)
     assert names == ["file1.pdf", "file2.docx"]
-    assert all(isinstance(c[2], datetime) for c in db.contracts)
+    assert all(isinstance(c["ingestion_date"], datetime) for c in db.contracts)
+    assert all(isinstance(c["last_processed"], datetime) for c in db.contracts)
+
+
+def test_ingest_skips_already_processed_files(monkeypatch, tmp_path):
+    pdf_path = tmp_path / "file1.pdf"
+    docx_path = tmp_path / "file2.docx"
+    pdf_path.touch()
+    docx_path.touch()
+
+    vec = DummyVectorStore()
+    db = DummyRelationalDB()
+    db.add_contract(
+        name="file1.pdf",
+        path=str(pdf_path),
+        ingestion_date=datetime(2020, 1, 1),
+        last_processed=datetime(2020, 1, 1),
+    )
+
+    ingestor = ContractIngestor(tmp_path, vec, db)
+
+    monkeypatch.setattr(ingestor, "_extract_pdf", lambda p: "PDF TEXT")
+    monkeypatch.setattr(ingestor, "_extract_docx", lambda p: "DOCX TEXT")
+
+    ingestor.ingest()
+
+    assert ("PDF TEXT", {"source": str(pdf_path)}) not in vec.added
+    assert ("DOCX TEXT", {"source": str(docx_path)}) in vec.added
+    assert len(db.contracts) == 2
+
+
+def test_ingest_reprocess_all_clears_and_updates(monkeypatch, tmp_path):
+    pdf_path = tmp_path / "file1.pdf"
+    docx_path = tmp_path / "file2.docx"
+    pdf_path.touch()
+    docx_path.touch()
+
+    vec = DummyVectorStore()
+    db = DummyRelationalDB()
+    db.add_contract(
+        name="file1.pdf",
+        path=str(pdf_path),
+        ingestion_date=datetime(2020, 1, 1),
+        last_processed=datetime(2020, 1, 1),
+    )
+    db.add_contract(
+        name="file2.docx",
+        path=str(docx_path),
+        ingestion_date=datetime(2020, 1, 1),
+        last_processed=datetime(2020, 1, 1),
+    )
+
+    ingestor = ContractIngestor(tmp_path, vec, db)
+
+    monkeypatch.setattr(ingestor, "_extract_pdf", lambda p: "PDF TEXT")
+    monkeypatch.setattr(ingestor, "_extract_docx", lambda p: "DOCX TEXT")
+
+    ingestor.ingest(reprocess_all=True)
+
+    assert vec.cleared
+    assert len(vec.added) == 2
+    assert all(c["last_processed"] is not None for c in db.contracts)
