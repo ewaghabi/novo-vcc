@@ -26,12 +26,19 @@ Este projeto é uma plataforma em Python que utiliza modelos de linguagem (LLMs)
 ## 🧱 Estrutura de diretórios
 app/
 ├── ingestion/ # Extração e leitura de contratos
+
 ├── processing/ # Execução de prompts e análises
+
 ├── chat/ # Módulo RAG para conversa
+
 ├── ui/ # Interface Streamlit
+
 ├── storage/ # Acesso a dados (vector + relacional)
+
 ├── config/ # Arquivos de configuração
+
 tests/ # Testes unitários
+
 data/ # Diretório local de contratos
 
 ## ⚙️ Como executar
