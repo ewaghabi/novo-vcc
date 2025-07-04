@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "novo-vcc"
+version = "0.1.0"
+description = "Sistema de análise contratual com LLM"
+authors = ["Seu Nome <seuemail@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+langchain = "*"
+chromadb = "*"
+openai = "*"
+streamlit = "*"
+SQLAlchemy = "*"
+python-dotenv = "*"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
