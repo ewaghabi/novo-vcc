@@ -53,3 +53,23 @@ def test_add_and_persist(monkeypatch):
 
     assert dummy_store.added == [(["hello"], [{"foo": "bar"}])]
     assert dummy_store.persist_called
+
+
+def test_clear_reinitializes_store(monkeypatch, tmp_path):
+    first_store = DummyStore()
+    second_store = DummyStore()
+
+    def first_chroma(*args, **kwargs):
+        return first_store
+
+    def second_chroma(*args, **kwargs):
+        return second_store
+
+    monkeypatch.setattr(vector_store_adapter, "Chroma", first_chroma)
+    monkeypatch.setattr(vector_store_adapter, "OpenAIEmbeddings", lambda: DummyEmbeddings())
+    adapter = vector_store_adapter.VectorStoreAdapter(persist_directory=str(tmp_path))
+    assert adapter._store is first_store
+
+    monkeypatch.setattr(vector_store_adapter, "Chroma", second_chroma)
+    adapter.clear()
+    assert adapter._store is second_store
