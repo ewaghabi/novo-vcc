@@ -1,5 +1,14 @@
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy import (
+    create_engine,
+    Column,
+    Integer,
+    String,
+    DateTime,
+    Date,
+    Float,
+    Numeric,
+)
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 Base = declarative_base()
@@ -13,6 +22,26 @@ class Contract(Base):
     path = Column(String, nullable=False)
     ingestion_date = Column(DateTime, default=datetime.utcnow)
     last_processed = Column(DateTime, default=datetime.utcnow)
+
+    # Additional optional metadata fields
+    contrato = Column(String, nullable=True)
+    inicioPrazo = Column(Date, nullable=True)
+    fimPrazo = Column(Date, nullable=True)
+    empresa = Column(String, nullable=True)
+    icj = Column(String, nullable=True)
+    valorContratoOriginal = Column(Numeric, nullable=True)
+    moeda = Column(String, nullable=True)
+    taxaCambio = Column(Float, nullable=True)
+    gerenteContrato = Column(String, nullable=True)
+    areaContrato = Column(String, nullable=True)
+    modalidade = Column(String, nullable=True)
+    textoModalidade = Column(String, nullable=True)
+    reajuste = Column(String, nullable=True)
+    fornecedor = Column(String, nullable=True)
+    nomeFornecedor = Column(String, nullable=True)
+    tipoContrato = Column(String, nullable=True)
+    objetoContrato = Column(String, nullable=True)
+    linhasServico = Column(String, nullable=True)
 
 
 class RelationalDBAdapter:
