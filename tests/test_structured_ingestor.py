@@ -1,0 +1,67 @@
+import json
+from pathlib import Path
+import sys
+import types
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+langchain_stub = types.ModuleType("langchain")
+langchain_stub.embeddings = types.ModuleType("langchain.embeddings")
+langchain_stub.embeddings.OpenAIEmbeddings = object
+langchain_stub.vectorstores = types.ModuleType("langchain.vectorstores")
+langchain_stub.vectorstores.Chroma = object
+sys.modules.setdefault("langchain", langchain_stub)
+sys.modules.setdefault("langchain.embeddings", langchain_stub.embeddings)
+sys.modules.setdefault("langchain.vectorstores", langchain_stub.vectorstores)
+
+from app.ingestion.ingestor import ContractStructuredDataIngestor
+from app.storage.relational_db_adapter import RelationalDBAdapter, Contract
+
+
+DATA_FILE = ROOT / "tests" / "data" / "contratos_tst.csv"
+
+
+def _get_all(session):
+    return session.query(Contract).order_by(Contract.contrato).all()
+
+
+def test_ingest_structured_creates_records():
+    db = RelationalDBAdapter(db_url="sqlite:///:memory:")
+    ing = ContractStructuredDataIngestor(DATA_FILE, db)
+    ing.ingest()
+
+    session = db._Session()
+    rows = _get_all(session)
+    session.close()
+
+    assert len(rows) == 6
+    c = {r.contrato: json.loads(r.linhasServico) for r in rows}
+    assert len(c["4600637168"]) == 5
+
+
+def test_ingest_structured_skips_existing():
+    db = RelationalDBAdapter(db_url="sqlite:///:memory:")
+    db.add_contract_structured(contrato="4600326151")
+    ing = ContractStructuredDataIngestor(DATA_FILE, db)
+    ing.ingest()
+
+    session = db._Session()
+    rows = _get_all(session)
+    session.close()
+    # Should still be 6 unique contracts
+    assert len(rows) == 6
+
+
+def test_ingest_structured_full_load_clears():
+    db = RelationalDBAdapter(db_url="sqlite:///:memory:")
+    ing = ContractStructuredDataIngestor(DATA_FILE, db)
+    ing.ingest()
+    # second run with full load should clear previous
+    ing.ingest(full_load=True)
+
+    session = db._Session()
+    rows = _get_all(session)
+    session.close()
+    assert len(rows) == 6
