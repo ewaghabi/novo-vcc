@@ -39,6 +39,10 @@ def test_ingest_structured_creates_records():
     assert len(rows) == 6
     c = {r.contrato: json.loads(r.linhasServico) for r in rows}
     assert len(c["4600637168"]) == 5
+    first = next(r for r in rows if r.contrato == "4600308523")
+    assert first.nomeGerenteContrato == "CARLOS SANTANA LIMA ALMEIDA"
+    assert first.lotacaoGerenteContrato == "TI/DEVOPS"
+    assert ing.progress == 100.0
 
 
 def test_ingest_structured_skips_existing():
@@ -65,3 +69,11 @@ def test_ingest_structured_full_load_clears():
     rows = _get_all(session)
     session.close()
     assert len(rows) == 6
+
+
+def test_ingest_progress_tracking():
+    db = RelationalDBAdapter(db_url="sqlite:///:memory:")
+    ing = ContractStructuredDataIngestor(DATA_FILE, db)
+    assert ing.progress == 0.0
+    ing.ingest()
+    assert ing.progress == 100.0
