@@ -2,7 +2,7 @@ import sys
 import types
 from pathlib import Path
 
-# Ensure repository root is in sys.path for package resolution
+# Ajusta caminho para importar a aplicação
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -21,6 +21,7 @@ sys.modules.setdefault("langchain.vectorstores", langchain_stub.vectorstores)
 from app.storage import vector_store_adapter
 
 
+# Representa um armazenamento vetorial simplificado
 class DummyStore:
     def __init__(self):
         self.added = []
@@ -33,11 +34,13 @@ class DummyStore:
         self.persist_called = True
 
 
+# Stub de embeddings usado apenas nos testes
 class DummyEmbeddings:
     pass
 
 
 def test_add_and_persist(monkeypatch):
+    """Verifica adição de documentos e persistência."""
     dummy_store = DummyStore()
 
     def dummy_chroma(*args, **kwargs):
@@ -56,6 +59,7 @@ def test_add_and_persist(monkeypatch):
 
 
 def test_clear_reinitializes_store(monkeypatch, tmp_path):
+    """Confere se limpar recria o armazenamento."""
     first_store = DummyStore()
     second_store = DummyStore()
 

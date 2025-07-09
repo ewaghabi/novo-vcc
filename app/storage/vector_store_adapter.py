@@ -4,10 +4,12 @@ from pathlib import Path
 import shutil
 
 
+# Envolve o Chroma para facilitar o uso pela aplicação
 class VectorStoreAdapter:
     """Wrapper around Chroma vector store using OpenAI embeddings."""
 
     def __init__(self, persist_directory: str = "chroma_db") -> None:
+        # Diretório onde o Chroma irá persistir os dados
         self._persist_directory = persist_directory
         self._embedding = OpenAIEmbeddings()
         self._store = Chroma(
@@ -15,15 +17,15 @@ class VectorStoreAdapter:
         )
 
     def add_document(self, text: str, metadata: dict | None = None) -> None:
-        """Add a single text document with optional metadata to the store."""
+        """Adiciona um texto com metadados ao vetor."""
         self._store.add_texts([text], metadatas=[metadata or {}])
 
     def persist(self) -> None:
-        """Persist the underlying Chroma store to disk."""
+        """Grava em disco o estado atual do Chroma."""
         self._store.persist()
 
     def clear(self) -> None:
-        """Remove all documents from the store and reset it."""
+        """Remove todos os documentos e recria o armazenamento."""
         if Path(self._persist_directory).exists():
             shutil.rmtree(self._persist_directory)
         self._store = Chroma(

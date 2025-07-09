@@ -2,7 +2,7 @@ from datetime import datetime
 import sys
 from pathlib import Path
 
-# Ensure repository root is on sys.path
+# Permite importar módulos da aplicação durante os testes
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -11,6 +11,7 @@ from app.storage.relational_db_adapter import Contract, RelationalDBAdapter
 
 
 def test_contract_model_attributes():
+    """Confere campos padrão do modelo Contract."""
     dt = datetime(2020, 1, 1)
     c = Contract(
         name="test",
@@ -47,6 +48,7 @@ def test_contract_model_attributes():
 
 
 def test_add_contract_inserts_into_db():
+    """Insere contrato simples e valida campos."""
     adapter = RelationalDBAdapter(db_url="sqlite:///:memory:")
     adapter.add_contract(name="c1", path="/tmp/c1.pdf")
 
@@ -81,6 +83,7 @@ def test_add_contract_inserts_into_db():
 
 
 def test_update_processing_date():
+    """Atualiza data de processamento corretamente."""
     adapter = RelationalDBAdapter(db_url="sqlite:///:memory:")
     adapter.add_contract(name="c1", path="/tmp/c1.pdf")
     adapter.update_processing_date("/tmp/c1.pdf", datetime(2021, 1, 1))

@@ -3,20 +3,21 @@ import sys
 import types
 from pathlib import Path
 
-# Ensure repository root is on sys.path
+# Garante que o pacote da aplicação seja encontrado
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 
 def reload_module():
-    """Reload employees module to apply current sys.modules state."""
+    """Recarrega módulo de empregados considerando mocks atuais."""
     if "app.processing.employees" in sys.modules:
         del sys.modules["app.processing.employees"]
     return importlib.import_module("app.processing.employees")
 
 
 def test_resolve_with_mock():
+    """Verifica resolução usando dados internos."""
     sys.modules.pop("buscaempregados", None)
     employees = reload_module()
     resolver = employees.EmployeeResolver()
@@ -29,6 +30,7 @@ def test_resolve_with_mock():
 
 
 def test_resolve_with_external_module(monkeypatch):
+    """Testa resolução chamando módulo externo simulado."""
     module = types.ModuleType("buscaempregados")
 
     def fake_busca_empregado(chave):

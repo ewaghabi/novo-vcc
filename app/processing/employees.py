@@ -6,9 +6,11 @@ except ImportError:  # pragma: no cover - library may not be available
     busca_empregado = None
 
 
+# Resolve dados de empregados, consultando serviço externo ou dados locais
 class EmployeeResolver:
     """Resolve employee information either via real service or internal mock."""
 
+    # Dados simulados para uso quando o serviço externo não estiver disponível
     _MOCK_DATA: dict[str, dict[str, str]] = {
         "CSLA": {
             "nome": "CARLOS SANTANA LIMA ALMEIDA",
@@ -37,11 +39,11 @@ class EmployeeResolver:
     }
 
     def resolve(self, chave: str) -> dict[str, str]:
-        """Return employee data for the given key."""
+        """Retorna os dados de empregado para a chave informada."""
         data: dict[str, str] | None = None
         if busca_empregado is not None:
             try:
-                data = busca_empregado(chave=chave)
+                data = busca_empregado(chave=chave)  # tenta serviço real
             except Exception:
                 data = None
         if not data:
@@ -54,6 +56,6 @@ class EmployeeResolver:
                 "cargo": "DESCONHECIDO",
             }
         # Always include the queried key
-        data = {**data, "chave": chave}
+        data = {**data, "chave": chave}  # inclui a chave consultada no resultado
         return data
 

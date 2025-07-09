@@ -14,6 +14,7 @@ from app.storage.relational_db_adapter import RelationalDBAdapter
 from app.processing.employees import EmployeeResolver
 
 
+# Classe para realizar a ingestão de contratos em PDF ou DOCX
 class ContractIngestor:
     """Ingests PDF and DOCX contracts from a directory."""
 
@@ -23,15 +24,17 @@ class ContractIngestor:
         vector_store: VectorStoreAdapter,
         relational_db: RelationalDBAdapter,
     ) -> None:
+        # Caminho contendo os contratos a serem processados
         self.directory = Path(directory)
         self.vector_store = vector_store
         self.relational_db = relational_db
 
     def ingest(self, reprocess_all: bool = False) -> None:
+        """Percorre os arquivos e envia texto para o vetor e banco"""
         if reprocess_all:
-            self.vector_store.clear()
+            self.vector_store.clear()  # remove documentos existentes
 
-        for file_path in self.directory.iterdir():
+        for file_path in self.directory.iterdir():  # loop sobre cada arquivo na pasta
             if not file_path.is_file():
                 continue
             ext = file_path.suffix.lower()
@@ -47,7 +50,7 @@ class ContractIngestor:
                 continue
 
             metadata = {"source": str(file_path)}
-            self.vector_store.add_document(text, metadata)
+            self.vector_store.add_document(text, metadata)  # armazena texto no Chroma
             if existing:
                 self.relational_db.update_processing_date(str(file_path))
             else:
@@ -58,30 +61,35 @@ class ContractIngestor:
                     ingestion_date=now,
                     last_processed=now,
                 )
-        self.vector_store.persist()
+        self.vector_store.persist()  # garante que as alterações sejam salvas
 
     def _extract_pdf(self, path: Path) -> str:
+        """Lê o texto de um arquivo PDF"""
         doc = fitz.open(path)
         text = "".join(page.get_text() for page in doc)
         doc.close()
         return text
 
     def _extract_docx(self, path: Path) -> str:
+        """Lê o texto de um documento DOCX"""
         doc = DocxDocument(path)
         text = "\n".join(paragraph.text for paragraph in doc.paragraphs)
         return text
 
 
+# Classe dedicada a carregar metadados estruturados a partir de CSV
 class ContractStructuredDataIngestor:
     """Load structured contract data from a CSV file."""
 
     def __init__(self, csv_path: str | Path, relational_db: RelationalDBAdapter) -> None:
+        # Caminho do arquivo CSV com dados estruturados
         self.csv_path = Path(csv_path)
         self.relational_db = relational_db
         self.progress = 0.0
         self._resolver = EmployeeResolver()
 
     def ingest(self, full_load: bool = False) -> None:
+        """Realiza a carga dos contratos listados no CSV"""
         if full_load:
             self.relational_db.clear_contracts()
 
@@ -89,6 +97,7 @@ class ContractStructuredDataIngestor:
 
         contracts: dict[str, dict] = {}
         with open(self.csv_path, encoding="utf8") as f:
+            # Leitura linha a linha do CSV
             header: list[str] | None = None
             for line in f:
                 line = line.strip()
@@ -99,7 +108,7 @@ class ContractStructuredDataIngestor:
                     line = line[:-1]
                 line = line.rstrip(';')
                 line = line.replace('""', '"')
-                row = next(csv.reader([line], delimiter=',', quotechar='"'))
+                row = next(csv.reader([line], delimiter=',', quotechar='"'))  # parser da linha
                 if header is None:
                     header = row
                     continue
@@ -164,7 +173,7 @@ class ContractStructuredDataIngestor:
 
         total = len(contracts)
         processed = 0
-        for data in contracts.values():
+        for data in contracts.values():  # grava cada contrato
             if self.relational_db.get_contract_by_contrato(data["contrato"]):
                 processed += 1
                 self.progress = processed / total * 100
@@ -173,17 +182,19 @@ class ContractStructuredDataIngestor:
             data["nomeGerenteContrato"] = emp["nome"]
             data["lotacaoGerenteContrato"] = emp["lotacao"]
             data["linhasServico"] = json.dumps(data["linhasServico"], ensure_ascii=False)
-            self.relational_db.add_contract_structured(**data)
+            self.relational_db.add_contract_structured(**data)  # insere registro no banco
             processed += 1
             self.progress = processed / total * 100
 
     def _parse_date(self, value: str) -> date | None:
+        """Converte string de data para objeto date"""
         try:
             return datetime.strptime(value, "%Y%m%d").date()
         except Exception:
             return None
 
     def _parse_float(self, value: str) -> float | None:
+        """Converte número em texto para float"""
         try:
             return float(value)
         except Exception:
