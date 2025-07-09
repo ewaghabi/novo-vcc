@@ -86,3 +86,29 @@ class RelationalDBAdapter:
             contract.last_processed = processing_date or datetime.utcnow()
             session.commit()
         session.close()
+
+    def add_contract_structured(self, **fields) -> None:
+        """Insert a contract with structured metadata."""
+        session = self._Session()
+        fields.setdefault("name", fields.get("contrato"))
+        fields.setdefault("path", fields.get("contrato"))
+        fields.setdefault("ingestion_date", datetime.utcnow())
+        fields.setdefault("last_processed", datetime.utcnow())
+        contract = Contract(**fields)
+        session.add(contract)
+        session.commit()
+        session.close()
+
+    def get_contract_by_contrato(self, contrato: str) -> Contract | None:
+        """Return contract by its contrato identifier if present."""
+        session = self._Session()
+        contract = session.query(Contract).filter_by(contrato=contrato).first()
+        session.close()
+        return contract
+
+    def clear_contracts(self) -> None:
+        """Remove all contract rows."""
+        session = self._Session()
+        session.query(Contract).delete()
+        session.commit()
+        session.close()
