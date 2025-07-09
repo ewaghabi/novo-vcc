@@ -33,6 +33,8 @@ class Contract(Base):
     moeda = Column(String, nullable=True)
     taxaCambio = Column(Float, nullable=True)
     gerenteContrato = Column(String, nullable=True)
+    nomeGerenteContrato = Column(String, nullable=True)
+    lotacaoGerenteContrato = Column(String, nullable=True)
     areaContrato = Column(String, nullable=True)
     modalidade = Column(String, nullable=True)
     textoModalidade = Column(String, nullable=True)

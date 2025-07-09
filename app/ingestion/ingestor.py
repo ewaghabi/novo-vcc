@@ -11,6 +11,7 @@ from docx import Document as DocxDocument
 
 from app.storage.vector_store_adapter import VectorStoreAdapter
 from app.storage.relational_db_adapter import RelationalDBAdapter
+from app.processing.employees import EmployeeResolver
 
 
 class ContractIngestor:
@@ -77,10 +78,14 @@ class ContractStructuredDataIngestor:
     def __init__(self, csv_path: str | Path, relational_db: RelationalDBAdapter) -> None:
         self.csv_path = Path(csv_path)
         self.relational_db = relational_db
+        self.progress = 0.0
+        self._resolver = EmployeeResolver()
 
     def ingest(self, full_load: bool = False) -> None:
         if full_load:
             self.relational_db.clear_contracts()
+
+        self.progress = 0.0
 
         contracts: dict[str, dict] = {}
         with open(self.csv_path, encoding="utf8") as f:
@@ -157,11 +162,20 @@ class ContractStructuredDataIngestor:
                 else:
                     contracts[contrato]["linhasServico"].append(service)
 
+        total = len(contracts)
+        processed = 0
         for data in contracts.values():
             if self.relational_db.get_contract_by_contrato(data["contrato"]):
+                processed += 1
+                self.progress = processed / total * 100
                 continue
+            emp = self._resolver.resolve(data["gerenteContrato"])
+            data["nomeGerenteContrato"] = emp["nome"]
+            data["lotacaoGerenteContrato"] = emp["lotacao"]
             data["linhasServico"] = json.dumps(data["linhasServico"], ensure_ascii=False)
             self.relational_db.add_contract_structured(**data)
+            processed += 1
+            self.progress = processed / total * 100
 
     def _parse_date(self, value: str) -> date | None:
         try:

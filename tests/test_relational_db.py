@@ -33,6 +33,8 @@ def test_contract_model_attributes():
     assert c.moeda is None
     assert c.taxaCambio is None
     assert c.gerenteContrato is None
+    assert c.nomeGerenteContrato is None
+    assert c.lotacaoGerenteContrato is None
     assert c.areaContrato is None
     assert c.modalidade is None
     assert c.textoModalidade is None
@@ -65,6 +67,8 @@ def test_add_contract_inserts_into_db():
     assert row.moeda is None
     assert row.taxaCambio is None
     assert row.gerenteContrato is None
+    assert row.nomeGerenteContrato is None
+    assert row.lotacaoGerenteContrato is None
     assert row.areaContrato is None
     assert row.modalidade is None
     assert row.textoModalidade is None
