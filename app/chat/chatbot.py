@@ -8,13 +8,15 @@ from langchain.chains import RetrievalQA
 from app.storage.vector_store_adapter import VectorStoreAdapter
 
 
+# Classe que provê interação com contratos via modelo de linguagem
 class ContractChatbot:
     """Simple RAG chatbot over ingested contracts."""
 
     def __init__(self, vector_store: VectorStoreAdapter, model: str = "gpt-3.5-turbo") -> None:
+        # Guarda a referência ao repositório vetorial
         self._vector_store = vector_store
         self._llm = ChatOpenAI(model=model)
-        # Create retrieval QA chain using the underlying Chroma store
+        # Cria cadeia de consulta com base no Chroma
         self._chain = RetrievalQA.from_chain_type(
             llm=self._llm,
             chain_type="stuff",
@@ -23,11 +25,11 @@ class ContractChatbot:
 
     def ask(self, question: str, top_k: int = 3) -> Tuple[str, List[str]]:
         """Return answer and list of source contract paths."""
-        # Run the chain to get the final answer
+        # Executa a cadeia para obter resposta
         result = self._chain({"query": question})
         answer = result.get("result", "")
 
-        # Retrieve the most relevant documents
+        # Busca documentos mais relevantes
         docs = self._vector_store._store.similarity_search(question, k=top_k)
         sources = [d.metadata.get("source", "") for d in docs]
         return answer, sources

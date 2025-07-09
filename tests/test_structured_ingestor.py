@@ -5,7 +5,7 @@ import types
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+    sys.path.insert(0, str(ROOT))  # inclui raiz do projeto
 
 langchain_stub = types.ModuleType("langchain")
 langchain_stub.embeddings = types.ModuleType("langchain.embeddings")
@@ -24,10 +24,12 @@ DATA_FILE = ROOT / "tests" / "data" / "contratos_tst.csv"
 
 
 def _get_all(session):
+    """Retorna todos os contratos ordenados."""
     return session.query(Contract).order_by(Contract.contrato).all()
 
 
 def test_ingest_structured_creates_records():
+    """Gera registros no banco a partir do CSV."""
     db = RelationalDBAdapter(db_url="sqlite:///:memory:")
     ing = ContractStructuredDataIngestor(DATA_FILE, db)
     ing.ingest()
@@ -46,6 +48,7 @@ def test_ingest_structured_creates_records():
 
 
 def test_ingest_structured_skips_existing():
+    """Não duplica contratos já existentes."""
     db = RelationalDBAdapter(db_url="sqlite:///:memory:")
     db.add_contract_structured(contrato="4600326151")
     ing = ContractStructuredDataIngestor(DATA_FILE, db)
@@ -59,6 +62,7 @@ def test_ingest_structured_skips_existing():
 
 
 def test_ingest_structured_full_load_clears():
+    """Apaga tudo quando em modo full_load."""
     db = RelationalDBAdapter(db_url="sqlite:///:memory:")
     ing = ContractStructuredDataIngestor(DATA_FILE, db)
     ing.ingest()
@@ -72,6 +76,7 @@ def test_ingest_structured_full_load_clears():
 
 
 def test_ingest_progress_tracking():
+    """Acompanha a porcentagem de processamento."""
     db = RelationalDBAdapter(db_url="sqlite:///:memory:")
     ing = ContractStructuredDataIngestor(DATA_FILE, db)
     assert ing.progress == 0.0

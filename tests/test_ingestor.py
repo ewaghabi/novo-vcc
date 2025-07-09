@@ -8,7 +8,7 @@ import pytest
 import sys
 import types
 
-# Ensure repository root is in sys.path for package resolution
+# Ajusta PATH para localizar o pacote da aplicação
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -27,6 +27,7 @@ sys.modules.setdefault("langchain.vectorstores", langchain_stub.vectorstores)
 from app.ingestion.ingestor import ContractIngestor
 
 
+# Armazena dados de forma simplificada durante os testes
 class DummyVectorStore:
     def __init__(self):
         self.added = []
@@ -43,6 +44,7 @@ class DummyVectorStore:
         self.cleared = True
 
 
+# Simula banco relacional usado pela ingestão
 class DummyRelationalDB:
     def __init__(self):
         self.contracts = []
@@ -76,6 +78,7 @@ class DummyRelationalDB:
 
 
 def create_sample_pdf(path: Path, text: str):
+    """Gera um PDF fictício para testes."""
     doc = fitz.open()
     page = doc.new_page()
     page.insert_text((72, 72), text)
@@ -84,12 +87,14 @@ def create_sample_pdf(path: Path, text: str):
 
 
 def create_sample_docx(path: Path, text: str):
+    """Cria documento DOCX simples."""
     doc = DocxDocument()
     doc.add_paragraph(text)
     doc.save(path)
 
 
 def test_extract_pdf_and_docx(tmp_path):
+    """Valida extração de texto de arquivos."""
     pdf_path = tmp_path / "sample.pdf"
     docx_path = tmp_path / "sample.docx"
 
@@ -103,6 +108,7 @@ def test_extract_pdf_and_docx(tmp_path):
 
 
 def test_ingest_processes_files(monkeypatch, tmp_path):
+    """Verifica ingestão básica de arquivos."""
     pdf_path = tmp_path / "file1.pdf"
     docx_path = tmp_path / "file2.docx"
     pdf_path.touch()
@@ -131,6 +137,7 @@ def test_ingest_processes_files(monkeypatch, tmp_path):
 
 
 def test_ingest_skips_already_processed_files(monkeypatch, tmp_path):
+    """Garante que arquivos já processados são ignorados."""
     pdf_path = tmp_path / "file1.pdf"
     docx_path = tmp_path / "file2.docx"
     pdf_path.touch()
@@ -158,6 +165,7 @@ def test_ingest_skips_already_processed_files(monkeypatch, tmp_path):
 
 
 def test_ingest_reprocess_all_clears_and_updates(monkeypatch, tmp_path):
+    """Testa opção de reprocessamento completo."""
     pdf_path = tmp_path / "file1.pdf"
     docx_path = tmp_path / "file2.docx"
     pdf_path.touch()

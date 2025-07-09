@@ -14,6 +14,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 Base = declarative_base()
 
 
+# Modelo ORM representando os contratos armazenados
 class Contract(Base):
     __tablename__ = "contracts"
 
@@ -46,10 +47,12 @@ class Contract(Base):
     linhasServico = Column(String, nullable=True)
 
 
+# Adaptador simples para persistência usando SQLite
 class RelationalDBAdapter:
     """Simple SQLite wrapper for storing contract metadata."""
 
     def __init__(self, db_url: str = "sqlite:///data/contracts.db") -> None:
+        """Cria engine e classe de sessão."""
         self._engine = create_engine(db_url, connect_args={"check_same_thread": False})
         Base.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine)
@@ -74,6 +77,7 @@ class RelationalDBAdapter:
         session.close()
 
     def get_contract_by_path(self, path: str) -> Contract | None:
+        """Retorna contrato pelo caminho do arquivo."""
         session = self._Session()
         contract = session.query(Contract).filter_by(path=path).first()
         session.close()
@@ -82,6 +86,7 @@ class RelationalDBAdapter:
     def update_processing_date(
         self, path: str, processing_date: datetime | None = None
     ) -> None:
+        """Atualiza a data de processamento do contrato."""
         session = self._Session()
         contract = session.query(Contract).filter_by(path=path).first()
         if contract:
@@ -90,7 +95,7 @@ class RelationalDBAdapter:
         session.close()
 
     def add_contract_structured(self, **fields) -> None:
-        """Insert a contract with structured metadata."""
+        """Insere contrato com metadados estruturados."""
         session = self._Session()
         fields.setdefault("name", fields.get("contrato"))
         fields.setdefault("path", fields.get("contrato"))
@@ -102,14 +107,14 @@ class RelationalDBAdapter:
         session.close()
 
     def get_contract_by_contrato(self, contrato: str) -> Contract | None:
-        """Return contract by its contrato identifier if present."""
+        """Busca contrato pelo identificador do campo contrato."""
         session = self._Session()
         contract = session.query(Contract).filter_by(contrato=contrato).first()
         session.close()
         return contract
 
     def clear_contracts(self) -> None:
-        """Remove all contract rows."""
+        """Remove todos os registros da tabela."""
         session = self._Session()
         session.query(Contract).delete()
         session.commit()
