@@ -12,7 +12,6 @@ router = APIRouter()
 _vector_store = VectorStoreAdapter()
 _relational_db = RelationalDBAdapter()
 _ingestor = ContractIngestor("data", _vector_store, _relational_db)
-_structured_ingestor = ContractStructuredDataIngestor("data/contratos.csv", _relational_db)
 _chatbot = ContractChatbot(_vector_store)
 
 
@@ -26,10 +25,15 @@ def ingest() -> dict:
 
 # Rota responsável pela carga de metadados estruturados
 @router.post("/ingest-structured")
-def ingest_structured() -> dict:
-    """Load structured contract metadata."""
-    _structured_ingestor.ingest()
-    return {"status": "ok", "progress": _structured_ingestor.progress}
+def ingest_structured(csv_path: str = Body(..., embed=True)) -> dict:
+    """Carrega metadados de contratos a partir de um CSV.
+
+    Recebe o caminho do arquivo como parâmetro e devolve o id da execução
+    registrada.
+    """
+    ingestor = ContractStructuredDataIngestor(csv_path, _relational_db)
+    exec_id = ingestor.ingest()
+    return {"status": "ok", "id": exec_id}
 
 
 # Rota para enviar perguntas ao chatbot
@@ -82,3 +86,22 @@ def list_executions(status: str | None = None, start: str | None = None, end: st
         for r in rows
     ]
     return {"executions": executions}
+
+
+# Consulta detalhes de uma execução específica
+@router.get("/executions/{exec_id}")
+def get_execution(exec_id: int) -> dict:
+    """Retorna informações de uma execução pelo id."""
+    row = _relational_db.get_execution(exec_id)
+    if not row:
+        return {}
+    return {
+        "id": row.id,
+        "task_name": row.task_name,
+        "class_name": row.class_name,
+        "start_time": row.start_time.isoformat() if row.start_time else None,
+        "end_time": row.end_time.isoformat() if row.end_time else None,
+        "status": row.status,
+        "progress": row.progress,
+        "message": row.message,
+    }

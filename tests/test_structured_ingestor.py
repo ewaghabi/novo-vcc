@@ -33,7 +33,7 @@ def test_ingest_structured_creates_records():
     """Gera registros no banco a partir do CSV."""
     db = RelationalDBAdapter(db_url="sqlite:///:memory:")
     ing = ContractStructuredDataIngestor(DATA_FILE, db)
-    ing.ingest()
+    exec_id = ing.ingest()
 
     session = db._Session()
     rows = _get_all(session)
@@ -46,6 +46,7 @@ def test_ingest_structured_creates_records():
     assert first.nomeGerenteContrato == "CARLOS SANTANA LIMA ALMEIDA"
     assert first.lotacaoGerenteContrato == "TI/DEVOPS"
     assert ing.progress == 100.0
+    assert isinstance(exec_id, int)
 
 
 # Garante que contratos repetidos não são inseridos
@@ -84,8 +85,9 @@ def test_ingest_progress_tracking():
     db = RelationalDBAdapter(db_url="sqlite:///:memory:")
     ing = ContractStructuredDataIngestor(DATA_FILE, db)
     assert ing.progress == 0.0
-    ing.ingest()
+    exec_id = ing.ingest()
     assert ing.progress == 100.0
+    assert isinstance(exec_id, int)
 
 
 # Checa se registro de execução é criado
@@ -93,7 +95,7 @@ def test_ingest_creates_execution_record():
     """Verifica registro de execução durante ingestão estruturada."""
     db = RelationalDBAdapter(db_url="sqlite:///:memory:")
     ing = ContractStructuredDataIngestor(DATA_FILE, db)
-    ing.ingest()
+    exec_id = ing.ingest()
 
     session = db._Session()
     exec_rows = session.query(Execution).all()
@@ -101,3 +103,4 @@ def test_ingest_creates_execution_record():
 
     assert len(exec_rows) == 1
     assert exec_rows[0].status == "success"
+    assert exec_rows[0].id == exec_id

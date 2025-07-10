@@ -15,7 +15,7 @@ def test_execution_tracker_flow():
     db = RelationalDBAdapter(db_url="sqlite:///:memory:")
     tracker = ExecutionTracker(db, "tarefa", "Classe")
 
-    tracker.start()
+    exec_id = tracker.start()
     tracker.update(progress=50.0)
     tracker.finish()
 
@@ -28,3 +28,4 @@ def test_execution_tracker_flow():
     assert row.progress == 50.0
     assert row.status == "success"
     assert row.end_time is not None
+    assert row.id == exec_id
