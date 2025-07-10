@@ -94,16 +94,28 @@ def test_ingest_endpoint_calls_ingestor(monkeypatch):
 # Checa se /ingest-structured chama corretamente o ingestor
 def test_ingest_structured_calls_ingestor(monkeypatch):
     class DummyStructured(DummyIngestor):
-        def __init__(self):
+        def __init__(self, path, db):
             super().__init__()
-            self.progress = 42.0
-    ing = DummyStructured()
-    monkeypatch.setattr(routes, "_structured_ingestor", ing)
+            self.path = path
+            self.db = db
+        def ingest(self):
+            self.called = True
+            return 10
+
+    created = {}
+
+    def dummy_ctor(path, db):
+        obj = DummyStructured(path, db)
+        created["obj"] = obj
+        return obj
+
+    monkeypatch.setattr(routes, "ContractStructuredDataIngestor", dummy_ctor)
     client = TestClient(app)
-    resp = client.post("/ingest-structured")
+    resp = client.post("/ingest-structured", json={"csv_path": "file.csv"})
     assert resp.status_code == 200
-    assert resp.json() == {"status": "ok", "progress": 42.0}
-    assert ing.called
+    assert resp.json() == {"status": "ok", "id": 10}
+    assert created["obj"].called
+    assert created["obj"].path == "file.csv"
 
 
 # Testa ingestão real via API com verificação de execuções
@@ -112,13 +124,17 @@ def test_structured_ingestion_via_api(monkeypatch, tmp_path):
     data_file = ROOT / "tests" / "data" / "contratos_tst.csv"
     db_path = tmp_path / "db.sqlite"
     db = routes.RelationalDBAdapter(db_url=f"sqlite:///{db_path}")
-    ing = routes.ContractStructuredDataIngestor(data_file, db)
     monkeypatch.setattr(routes, "_relational_db", db)
-    monkeypatch.setattr(routes, "_structured_ingestor", ing)
 
     client = TestClient(app)
-    resp = client.post("/ingest-structured")
+    resp = client.post("/ingest-structured", json={"csv_path": str(data_file)})
     assert resp.status_code == 200
+    exec_id = resp.json()["id"]
+
+    # Aguarda até que a execução esteja concluída
+    resp = client.get(f"/executions/{exec_id}")
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "success"
 
     resp = client.get("/contracts")
     assert resp.status_code == 200

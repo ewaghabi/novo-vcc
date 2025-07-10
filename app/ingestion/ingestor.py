@@ -97,12 +97,15 @@ class ContractStructuredDataIngestor:
         self._resolver = EmployeeResolver()
 
     # Carrega os contratos definidos no CSV
-    def ingest(self, full_load: bool = False) -> None:
-        """Realiza a carga dos contratos listados no CSV"""
+    def ingest(self, full_load: bool = False) -> int:
+        """Realiza a carga dos contratos listados no CSV.
+
+        Retorna o identificador da execução registrado no banco.
+        """
         tracker = ExecutionTracker(
             self.relational_db, "structured_ingest", self.__class__.__name__
         )
-        tracker.start()
+        exec_id = tracker.start()  # registra execução e obtém o id
         # Bloco protegido para registrar falhas na execução
         try:
             if full_load:
@@ -206,6 +209,8 @@ class ContractStructuredDataIngestor:
                 tracker.update(progress=self.progress)
 
             tracker.finish()
+            # Ao final, devolve o identificador da execução
+            return exec_id
         except Exception:
             # Em caso de erro marca a execução como falha
             tracker.finish(status="failed")
