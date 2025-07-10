@@ -28,6 +28,7 @@ def _get_all(session):
     return session.query(Contract).order_by(Contract.contrato).all()
 
 
+# Valida criação de registros a partir do CSV
 def test_ingest_structured_creates_records():
     """Gera registros no banco a partir do CSV."""
     db = RelationalDBAdapter(db_url="sqlite:///:memory:")
@@ -47,6 +48,7 @@ def test_ingest_structured_creates_records():
     assert ing.progress == 100.0
 
 
+# Garante que contratos repetidos não são inseridos
 def test_ingest_structured_skips_existing():
     """Não duplica contratos já existentes."""
     db = RelationalDBAdapter(db_url="sqlite:///:memory:")
@@ -61,6 +63,7 @@ def test_ingest_structured_skips_existing():
     assert len(rows) == 6
 
 
+# Verifica modo full_load que apaga registros anteriores
 def test_ingest_structured_full_load_clears():
     """Apaga tudo quando em modo full_load."""
     db = RelationalDBAdapter(db_url="sqlite:///:memory:")
@@ -75,6 +78,7 @@ def test_ingest_structured_full_load_clears():
     assert len(rows) == 6
 
 
+# Confere atualização do progresso durante carga
 def test_ingest_progress_tracking():
     """Acompanha a porcentagem de processamento."""
     db = RelationalDBAdapter(db_url="sqlite:///:memory:")
@@ -84,6 +88,7 @@ def test_ingest_progress_tracking():
     assert ing.progress == 100.0
 
 
+# Checa se registro de execução é criado
 def test_ingest_creates_execution_record():
     """Verifica registro de execução durante ingestão estruturada."""
     db = RelationalDBAdapter(db_url="sqlite:///:memory:")

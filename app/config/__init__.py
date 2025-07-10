@@ -1,4 +1,4 @@
-"""Application configuration package."""
+"""Pacote de configurações da aplicação."""
 
 from .settings import API_BASE_URL
 

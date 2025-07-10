@@ -10,11 +10,12 @@ from app.config import API_BASE_URL
 _CHAT_ENDPOINT = f"{API_BASE_URL.rstrip('/')}/chat"
 
 
+# Função principal responsável por exibir a página
 def main() -> None:
     """Renderiza a interface principal de chat."""
     st.set_page_config(page_title="Novo VCC - Chat", layout="centered")
 
-    # Sidebar with navigation
+    # Barra lateral com navegação
     with st.sidebar:
         st.markdown("# Novo VCC")
         st.markdown("[Chat](#)")
@@ -24,6 +25,7 @@ def main() -> None:
 
     question = st.text_input("Faça sua pergunta sobre os contratos:")  # entrada do usuário
     if question:
+        # Envia a pergunta para a API
         try:
             response = httpx.post(_CHAT_ENDPOINT, json={"question": question}, timeout=30.0)
             response.raise_for_status()
@@ -39,9 +41,10 @@ def main() -> None:
 
         if sources:
             st.markdown("## Contratos relevantes")
-            for src in sources:
+            for src in sources:  # lista de arquivos retornados
                 st.write(src)
 
 
+# Inicia a aplicação quando executado diretamente
 if __name__ == "__main__":
     main()

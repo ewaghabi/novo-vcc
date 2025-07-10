@@ -65,12 +65,14 @@ class Execution(Base):
 class RelationalDBAdapter:
     """Simple SQLite wrapper for storing contract metadata."""
 
+    # Inicializa conexões e cria tabelas no banco SQLite
     def __init__(self, db_url: str = "sqlite:///data/contracts.db") -> None:
         """Cria engine e classe de sessão."""
         self._engine = create_engine(db_url, connect_args={"check_same_thread": False})
         Base.metadata.create_all(self._engine)
         self._Session = sessionmaker(bind=self._engine)
 
+    # Insere um contrato simples na tabela
     def add_contract(
         self,
         name: str,
@@ -90,6 +92,7 @@ class RelationalDBAdapter:
         session.commit()
         session.close()
 
+    # Retorna contrato a partir do caminho do arquivo
     def get_contract_by_path(self, path: str) -> Contract | None:
         """Retorna contrato pelo caminho do arquivo."""
         session = self._Session()
@@ -97,6 +100,7 @@ class RelationalDBAdapter:
         session.close()
         return contract
 
+    # Atualiza a data de processamento de um contrato
     def update_processing_date(
         self, path: str, processing_date: datetime | None = None
     ) -> None:
@@ -108,6 +112,7 @@ class RelationalDBAdapter:
             session.commit()
         session.close()
 
+    # Insere contrato com metadados mais completos
     def add_contract_structured(self, **fields) -> None:
         """Insere contrato com metadados estruturados."""
         session = self._Session()
@@ -120,6 +125,7 @@ class RelationalDBAdapter:
         session.commit()
         session.close()
 
+    # Obtém contrato pelo identificador "contrato"
     def get_contract_by_contrato(self, contrato: str) -> Contract | None:
         """Busca contrato pelo identificador do campo contrato."""
         session = self._Session()
@@ -127,6 +133,7 @@ class RelationalDBAdapter:
         session.close()
         return contract
 
+    # Remove todos os contratos cadastrados
     def clear_contracts(self) -> None:
         """Remove todos os registros da tabela."""
         session = self._Session()
@@ -137,6 +144,7 @@ class RelationalDBAdapter:
     # ------------------------------------------------------------------
     # Operações relacionadas à tabela de execuções de tarefas
 
+    # Cria registro inicial de uma execução de tarefa
     def create_execution(self, task_name: str, class_name: str) -> int:
         """Insere registro de início de execução."""
         session = self._Session()
@@ -147,6 +155,7 @@ class RelationalDBAdapter:
         session.close()
         return exec_id
 
+    # Busca uma execução específica pelo ID
     def get_execution(self, exec_id: int) -> Execution | None:
         """Busca execução pelo identificador."""
         session = self._Session()
@@ -154,6 +163,7 @@ class RelationalDBAdapter:
         session.close()
         return row
 
+    # Atualiza campos de uma execução existente
     def update_execution(
         self,
         exec_id: int,
@@ -178,9 +188,31 @@ class RelationalDBAdapter:
             session.commit()
         session.close()
 
+    # Remove todos os registros de execuções
     def clear_executions(self) -> None:
         """Remove todas as execuções."""
         session = self._Session()
         session.query(Execution).delete()
         session.commit()
         session.close()
+
+    # Lista execuções filtrando por status e período
+    def list_executions(
+        self,
+        *,
+        status: str | None = None,
+        start: datetime | None = None,
+        end: datetime | None = None,
+    ) -> list[Execution]:
+        """Retorna execuções filtrando por status e período."""
+        session = self._Session()
+        query = session.query(Execution)
+        if status is not None:
+            query = query.filter(Execution.status == status)
+        if start is not None:
+            query = query.filter(Execution.start_time >= start)
+        if end is not None:
+            query = query.filter(Execution.start_time <= end)
+        rows = query.order_by(Execution.start_time).all()
+        session.close()
+        return rows

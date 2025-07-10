@@ -39,6 +39,7 @@ class DummyEmbeddings:
     pass
 
 
+# Testa inclusão de texto e chamada ao persist
 def test_add_and_persist(monkeypatch):
     """Verifica adição de documentos e persistência."""
     dummy_store = DummyStore()
@@ -58,6 +59,7 @@ def test_add_and_persist(monkeypatch):
     assert dummy_store.persist_called
 
 
+# Verifica se o clear recria o armazenamento
 def test_clear_reinitializes_store(monkeypatch, tmp_path):
     """Confere se limpar recria o armazenamento."""
     first_store = DummyStore()

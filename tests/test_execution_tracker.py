@@ -9,6 +9,7 @@ from app.storage.relational_db_adapter import RelationalDBAdapter, Execution
 from app.storage.execution_tracker import ExecutionTracker
 
 
+# Verifica ciclo completo de registro de execução
 def test_execution_tracker_flow():
     """Valida ciclo completo do tracker."""
     db = RelationalDBAdapter(db_url="sqlite:///:memory:")

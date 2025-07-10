@@ -14,6 +14,7 @@ from app.storage.relational_db_adapter import (
 )
 
 
+# Valida atributos padrão do modelo Contract
 def test_contract_model_attributes():
     """Confere campos padrão do modelo Contract."""
     dt = datetime(2020, 1, 1)
@@ -51,6 +52,7 @@ def test_contract_model_attributes():
     assert c.linhasServico is None
 
 
+# Testa inserção de contrato no banco
 def test_add_contract_inserts_into_db():
     """Insere contrato simples e valida campos."""
     adapter = RelationalDBAdapter(db_url="sqlite:///:memory:")
@@ -86,6 +88,7 @@ def test_add_contract_inserts_into_db():
     assert row.linhasServico is None
 
 
+# Checa atualização da data de processamento
 def test_update_processing_date():
     """Atualiza data de processamento corretamente."""
     adapter = RelationalDBAdapter(db_url="sqlite:///:memory:")
@@ -99,6 +102,7 @@ def test_update_processing_date():
     assert row.last_processed == datetime(2021, 1, 1)
 
 
+# Exercita CRUD de execuções
 def test_execution_crud_operations():
     """Verifica criação e atualização de execuções."""
     db = RelationalDBAdapter(db_url="sqlite:///:memory:")

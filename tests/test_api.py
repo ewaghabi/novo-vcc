@@ -69,6 +69,7 @@ class DummyIngestor:
         self.called = True
 
 
+# Verifica retorno estruturado da rota /chat
 def test_chat_endpoint_returns_structure(monkeypatch):
     chatbot = DummyChatbot()
     monkeypatch.setattr(routes, "_chatbot", chatbot)
@@ -79,6 +80,7 @@ def test_chat_endpoint_returns_structure(monkeypatch):
     assert chatbot.questions == ["hello"]
 
 
+# Garante que /ingest aciona o ingestor
 def test_ingest_endpoint_calls_ingestor(monkeypatch):
     ing = DummyIngestor()
     monkeypatch.setattr(routes, "_ingestor", ing)
@@ -89,6 +91,7 @@ def test_ingest_endpoint_calls_ingestor(monkeypatch):
     assert ing.called
 
 
+# Checa se /ingest-structured chama corretamente o ingestor
 def test_ingest_structured_calls_ingestor(monkeypatch):
     class DummyStructured(DummyIngestor):
         def __init__(self):
@@ -101,3 +104,26 @@ def test_ingest_structured_calls_ingestor(monkeypatch):
     assert resp.status_code == 200
     assert resp.json() == {"status": "ok", "progress": 42.0}
     assert ing.called
+
+
+# Testa ingestão real via API com verificação de execuções
+def test_structured_ingestion_via_api(monkeypatch, tmp_path):
+    # Usa banco em memória e arquivo de testes
+    data_file = ROOT / "tests" / "data" / "contratos_tst.csv"
+    db_path = tmp_path / "db.sqlite"
+    db = routes.RelationalDBAdapter(db_url=f"sqlite:///{db_path}")
+    ing = routes.ContractStructuredDataIngestor(data_file, db)
+    monkeypatch.setattr(routes, "_relational_db", db)
+    monkeypatch.setattr(routes, "_structured_ingestor", ing)
+
+    client = TestClient(app)
+    resp = client.post("/ingest-structured")
+    assert resp.status_code == 200
+
+    resp = client.get("/contracts")
+    assert resp.status_code == 200
+    assert len(resp.json()["contracts"]) == 6
+
+    resp = client.get("/executions", params={"status": "success"})
+    assert resp.status_code == 200
+    assert len(resp.json()["executions"]) == 1
