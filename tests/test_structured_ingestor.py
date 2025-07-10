@@ -17,7 +17,7 @@ sys.modules.setdefault("langchain.embeddings", langchain_stub.embeddings)
 sys.modules.setdefault("langchain.vectorstores", langchain_stub.vectorstores)
 
 from app.ingestion.ingestor import ContractStructuredDataIngestor
-from app.storage.relational_db_adapter import RelationalDBAdapter, Contract
+from app.storage.relational_db_adapter import RelationalDBAdapter, Contract, Execution
 
 
 DATA_FILE = ROOT / "tests" / "data" / "contratos_tst.csv"
@@ -82,3 +82,17 @@ def test_ingest_progress_tracking():
     assert ing.progress == 0.0
     ing.ingest()
     assert ing.progress == 100.0
+
+
+def test_ingest_creates_execution_record():
+    """Verifica registro de execução durante ingestão estruturada."""
+    db = RelationalDBAdapter(db_url="sqlite:///:memory:")
+    ing = ContractStructuredDataIngestor(DATA_FILE, db)
+    ing.ingest()
+
+    session = db._Session()
+    exec_rows = session.query(Execution).all()
+    session.close()
+
+    assert len(exec_rows) == 1
+    assert exec_rows[0].status == "success"
