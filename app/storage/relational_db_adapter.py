@@ -133,6 +133,7 @@ class RelationalDBAdapter:
         session.close()
         return contract
 
+
     # Remove todos os contratos cadastrados
     def clear_contracts(self) -> None:
         """Remove todos os registros da tabela."""

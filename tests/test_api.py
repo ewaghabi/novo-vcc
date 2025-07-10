@@ -143,3 +143,74 @@ def test_structured_ingestion_via_api(monkeypatch, tmp_path):
     resp = client.get("/executions", params={"status": "success"})
     assert resp.status_code == 200
     assert len(resp.json()["executions"]) == 1
+
+
+# Verifica recuperação de contrato pelo campo 'contrato'
+def test_get_contract_by_contrato(monkeypatch):
+    class DummyDB:
+        def __init__(self):
+            from types import SimpleNamespace
+            from datetime import datetime
+            self.row = SimpleNamespace(
+                id=1,
+                name="c1",
+                path="/tmp/c1",
+                ingestion_date=datetime(2020, 1, 1),
+                last_processed=datetime(2020, 1, 2),
+                contrato="C1",
+                inicioPrazo=None,
+                fimPrazo=None,
+                empresa=None,
+                icj=None,
+                valorContratoOriginal=None,
+                moeda=None,
+                taxaCambio=None,
+                gerenteContrato=None,
+                nomeGerenteContrato=None,
+                lotacaoGerenteContrato=None,
+                areaContrato=None,
+                modalidade=None,
+                textoModalidade=None,
+                reajuste=None,
+                fornecedor=None,
+                nomeFornecedor=None,
+                tipoContrato=None,
+                objetoContrato=None,
+                linhasServico=None,
+            )
+
+        def get_contract_by_contrato(self, contrato):
+            return self.row if contrato == "C1" else None
+
+    db = DummyDB()
+    monkeypatch.setattr(routes, "_relational_db", db)
+    client = TestClient(app)
+    resp = client.get("/contract/C1")
+    assert resp.status_code == 200
+    assert resp.json()["id"] == 1
+    resp = client.get("/contract/C2")
+    assert resp.status_code == 200
+    assert resp.json() == {}
+
+
+# Confere uso do parâmetro model na rota /chat
+def test_chat_endpoint_accepts_model(monkeypatch):
+    class DummyBot(DummyChatbot):
+        def __init__(self, model=None, **kwargs):
+            super().__init__()
+            self.model = model
+
+    created = {}
+
+    def dummy_ctor(store, model="x"):
+        bot = DummyBot(model=model)
+        created["bot"] = bot
+        return bot
+
+    monkeypatch.setattr(routes, "ContractChatbot", dummy_ctor)
+    monkeypatch.setattr(routes, "_chatbot", DummyChatbot())
+    client = TestClient(app)
+    resp = client.post("/chat", json={"question": "oi", "model": "my-model"})
+    assert resp.status_code == 200
+    assert created["bot"].model == "my-model"
+    assert created["bot"].questions == ["oi"]
