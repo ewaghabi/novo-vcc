@@ -38,9 +38,14 @@ def ingest_structured(csv_path: str = Body(..., embed=True)) -> dict:
 
 # Rota para enviar perguntas ao chatbot
 @router.post("/chat")
-def chat(question: str = Body(..., embed=True)) -> dict:
-    """Ask a question about contracts."""
-    answer, sources = _chatbot.ask(question)
+def chat(
+    question: str = Body(..., embed=True),
+    model: str | None = Body(None, embed=True),
+) -> dict:
+    """Envie uma pergunta ao chatbot utilizando o modelo informado."""
+    # Usa o chatbot global por padrão, mas permite especificar outro modelo
+    bot = _chatbot if model is None else ContractChatbot(_vector_store, model=model)
+    answer, sources = bot.ask(question)
     return {"answer": answer, "sources": sources}
 
 
@@ -63,6 +68,43 @@ def list_contracts() -> dict:
     ]
     session.close()
     return {"contracts": contracts}
+
+
+# Recupera detalhes de um contrato específico pelo número
+@router.get("/contract/{contract_id}")
+def get_contract(contract_id: str) -> dict:
+    """Retorna os dados completos de um contrato pelo campo 'contrato'."""
+    # Busca no banco utilizando o valor do campo 'contrato'
+    row = _relational_db.get_contract_by_contrato(contract_id)
+    if not row:
+        return {}
+    return {
+        "id": row.id,
+        "name": row.name,
+        "path": row.path,
+        "ingestion_date": row.ingestion_date.isoformat() if row.ingestion_date else None,
+        "last_processed": row.last_processed.isoformat() if row.last_processed else None,
+        "contrato": row.contrato,
+        "inicioPrazo": row.inicioPrazo.isoformat() if row.inicioPrazo else None,
+        "fimPrazo": row.fimPrazo.isoformat() if row.fimPrazo else None,
+        "empresa": row.empresa,
+        "icj": row.icj,
+        "valorContratoOriginal": str(row.valorContratoOriginal) if row.valorContratoOriginal else None,
+        "moeda": row.moeda,
+        "taxaCambio": row.taxaCambio,
+        "gerenteContrato": row.gerenteContrato,
+        "nomeGerenteContrato": row.nomeGerenteContrato,
+        "lotacaoGerenteContrato": row.lotacaoGerenteContrato,
+        "areaContrato": row.areaContrato,
+        "modalidade": row.modalidade,
+        "textoModalidade": row.textoModalidade,
+        "reajuste": row.reajuste,
+        "fornecedor": row.fornecedor,
+        "nomeFornecedor": row.nomeFornecedor,
+        "tipoContrato": row.tipoContrato,
+        "objetoContrato": row.objetoContrato,
+        "linhasServico": row.linhasServico,
+    }
 
 
 # Consulta execuções registradas filtrando por status e período
