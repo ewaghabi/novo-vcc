@@ -16,6 +16,7 @@ def reload_module():
     return importlib.import_module("app.processing.employees")
 
 
+# Testa resolução usando dados internos de mock
 def test_resolve_with_mock():
     """Verifica resolução usando dados internos."""
     sys.modules.pop("buscaempregados", None)
@@ -29,6 +30,7 @@ def test_resolve_with_mock():
     assert unknown["chave"] == "XXXX"
 
 
+# Testa integração com módulo externo de busca
 def test_resolve_with_external_module(monkeypatch):
     """Testa resolução chamando módulo externo simulado."""
     module = types.ModuleType("buscaempregados")

@@ -19,6 +19,7 @@ from app.processing.employees import EmployeeResolver
 class ContractIngestor:
     """Ingests PDF and DOCX contracts from a directory."""
 
+    # Configura caminhos e dependências para a ingestão
     def __init__(
         self,
         directory: str | Path,
@@ -30,11 +31,14 @@ class ContractIngestor:
         self.vector_store = vector_store
         self.relational_db = relational_db
 
+    # Percorre os arquivos da pasta realizando a ingestão
     def ingest(self, reprocess_all: bool = False) -> None:
         """Percorre os arquivos e envia texto para o vetor e banco"""
         if reprocess_all:
+            # Solicita limpeza total do vetor quando indicado
             self.vector_store.clear()  # remove documentos existentes
 
+        # Itera sobre todos os arquivos encontrados na pasta
         for file_path in self.directory.iterdir():  # loop sobre cada arquivo na pasta
             if not file_path.is_file():
                 continue
@@ -67,6 +71,7 @@ class ContractIngestor:
     def _extract_pdf(self, path: Path) -> str:
         """Lê o texto de um arquivo PDF"""
         doc = fitz.open(path)
+        # Concatena o texto de todas as páginas
         text = "".join(page.get_text() for page in doc)
         doc.close()
         return text
@@ -74,6 +79,7 @@ class ContractIngestor:
     def _extract_docx(self, path: Path) -> str:
         """Lê o texto de um documento DOCX"""
         doc = DocxDocument(path)
+        # Junta todas as linhas do documento
         text = "\n".join(paragraph.text for paragraph in doc.paragraphs)
         return text
 
@@ -82,6 +88,7 @@ class ContractIngestor:
 class ContractStructuredDataIngestor:
     """Load structured contract data from a CSV file."""
 
+    # Recebe caminho do CSV e dependências de banco
     def __init__(self, csv_path: str | Path, relational_db: RelationalDBAdapter) -> None:
         # Caminho do arquivo CSV com dados estruturados
         self.csv_path = Path(csv_path)
@@ -89,12 +96,14 @@ class ContractStructuredDataIngestor:
         self.progress = 0.0
         self._resolver = EmployeeResolver()
 
+    # Carrega os contratos definidos no CSV
     def ingest(self, full_load: bool = False) -> None:
         """Realiza a carga dos contratos listados no CSV"""
         tracker = ExecutionTracker(
             self.relational_db, "structured_ingest", self.__class__.__name__
         )
         tracker.start()
+        # Bloco protegido para registrar falhas na execução
         try:
             if full_load:
                 self.relational_db.clear_contracts()
@@ -105,7 +114,7 @@ class ContractStructuredDataIngestor:
             with open(self.csv_path, encoding="utf8") as f:
                 # Leitura linha a linha do CSV
                 header: list[str] | None = None
-                for line in f:
+                for line in f:  # percorre cada linha do arquivo
                     line = line.strip()
                     if not line or not line.startswith('"'):
                         continue
@@ -179,7 +188,7 @@ class ContractStructuredDataIngestor:
 
             total = len(contracts)
             processed = 0
-            for data in contracts.values():
+            for data in contracts.values():  # percorre cada contrato carregado
                 if self.relational_db.get_contract_by_contrato(data["contrato"]):
                     processed += 1
                     self.progress = processed / total * 100
@@ -198,11 +207,13 @@ class ContractStructuredDataIngestor:
 
             tracker.finish()
         except Exception:
+            # Em caso de erro marca a execução como falha
             tracker.finish(status="failed")
             raise
 
     def _parse_date(self, value: str) -> date | None:
         """Converte string de data para objeto date"""
+        # Tentativa de conversão para data
         try:
             return datetime.strptime(value, "%Y%m%d").date()
         except Exception:
@@ -210,6 +221,7 @@ class ContractStructuredDataIngestor:
 
     def _parse_float(self, value: str) -> float | None:
         """Converte número em texto para float"""
+        # Converte para float quando possível
         try:
             return float(value)
         except Exception:

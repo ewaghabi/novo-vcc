@@ -93,6 +93,7 @@ def create_sample_docx(path: Path, text: str):
     doc.save(path)
 
 
+# Testa leitura de PDF e DOCX simulados
 def test_extract_pdf_and_docx(tmp_path):
     """Valida extração de texto de arquivos."""
     pdf_path = tmp_path / "sample.pdf"
@@ -107,6 +108,7 @@ def test_extract_pdf_and_docx(tmp_path):
     assert "Hello DOCX" in ingestor._extract_docx(docx_path)
 
 
+# Confere ingestão de múltiplos arquivos
 def test_ingest_processes_files(monkeypatch, tmp_path):
     """Verifica ingestão básica de arquivos."""
     pdf_path = tmp_path / "file1.pdf"
@@ -136,6 +138,7 @@ def test_ingest_processes_files(monkeypatch, tmp_path):
     assert all(isinstance(c["last_processed"], datetime) for c in db.contracts)
 
 
+# Verifica se arquivos já tratados são ignorados
 def test_ingest_skips_already_processed_files(monkeypatch, tmp_path):
     """Garante que arquivos já processados são ignorados."""
     pdf_path = tmp_path / "file1.pdf"
@@ -164,6 +167,7 @@ def test_ingest_skips_already_processed_files(monkeypatch, tmp_path):
     assert len(db.contracts) == 2
 
 
+# Checa comportamento do parâmetro reprocess_all
 def test_ingest_reprocess_all_clears_and_updates(monkeypatch, tmp_path):
     """Testa opção de reprocessamento completo."""
     pdf_path = tmp_path / "file1.pdf"

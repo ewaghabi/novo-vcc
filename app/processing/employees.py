@@ -38,6 +38,7 @@ class EmployeeResolver:
         },
     }
 
+    # Resolve dados para uma chave de empregado
     def resolve(self, chave: str) -> dict[str, str]:
         """Retorna os dados de empregado para a chave informada."""
         data: dict[str, str] | None = None

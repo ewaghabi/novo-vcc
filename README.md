@@ -63,4 +63,14 @@ poetry run python api_main.py
 # `API_BASE_URL` apontando para o novo endereço.
 poetry run python main.py
 
+## 📑 Rotas da API
+
+| Rota | Método | Descrição | Parâmetros | Retorno |
+|------|--------|-----------|------------|---------|
+| `/ingest` | POST | Inicia a ingestão de arquivos no diretório `data` | nenhum | `{"status": "ok"}` |
+| `/ingest-structured` | POST | Carrega o CSV de contratos estruturados | nenhum | `{"status": "ok", "progress": n}` |
+| `/chat` | POST | Consulta o chatbot sobre os contratos | `question` no corpo | `{"answer": str, "sources": []}` |
+| `/contracts` | GET | Lista todos os contratos armazenados | nenhum | `{"contracts": [...]}` |
+| `/executions` | GET | Lista execuções de tarefas | `status`, `start`, `end` | `{"executions": [...]}` |
+
 Este projeto está em desenvolvimento contínuo. As tecnologias utilizadas estão organizadas de forma modular para permitir futura substituição de bancos e serviços (ex: ChromaDB por OpenSearch, SQLite por Cloud SQL, etc).
