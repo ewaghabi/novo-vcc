@@ -7,7 +7,11 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from app.storage.relational_db_adapter import Contract, RelationalDBAdapter
+from app.storage.relational_db_adapter import (
+    Contract,
+    Execution,
+    RelationalDBAdapter,
+)
 
 
 def test_contract_model_attributes():
@@ -93,3 +97,31 @@ def test_update_processing_date():
     session.close()
 
     assert row.last_processed == datetime(2021, 1, 1)
+
+
+def test_execution_crud_operations():
+    """Verifica criação e atualização de execuções."""
+    db = RelationalDBAdapter(db_url="sqlite:///:memory:")
+
+    exec_id = db.create_execution("tarefa", "Classe")
+    db.update_execution(exec_id, progress=25.0)
+    db.update_execution(exec_id, status="running")
+
+    db.update_execution(exec_id, end_time=datetime(2021, 1, 2), status="done")
+
+    session = db._Session()
+    row = session.query(Execution).first()
+    session.close()
+
+    assert row.id == exec_id
+    assert row.task_name == "tarefa"
+    assert row.class_name == "Classe"
+    assert row.progress == 25.0
+    assert row.status == "done"
+    assert row.end_time == datetime(2021, 1, 2)
+
+    db.clear_executions()
+    session = db._Session()
+    count = session.query(Execution).count()
+    session.close()
+    assert count == 0

@@ -11,6 +11,7 @@ from docx import Document as DocxDocument
 
 from app.storage.vector_store_adapter import VectorStoreAdapter
 from app.storage.relational_db_adapter import RelationalDBAdapter
+from app.storage.execution_tracker import ExecutionTracker
 from app.processing.employees import EmployeeResolver
 
 
@@ -90,101 +91,115 @@ class ContractStructuredDataIngestor:
 
     def ingest(self, full_load: bool = False) -> None:
         """Realiza a carga dos contratos listados no CSV"""
-        if full_load:
-            self.relational_db.clear_contracts()
+        tracker = ExecutionTracker(
+            self.relational_db, "structured_ingest", self.__class__.__name__
+        )
+        tracker.start()
+        try:
+            if full_load:
+                self.relational_db.clear_contracts()
 
-        self.progress = 0.0
+            self.progress = 0.0
 
-        contracts: dict[str, dict] = {}
-        with open(self.csv_path, encoding="utf8") as f:
-            # Leitura linha a linha do CSV
-            header: list[str] | None = None
-            for line in f:
-                line = line.strip()
-                if not line or not line.startswith('"'):
-                    continue
-                line = line[1:]
-                if line.endswith('"'):
-                    line = line[:-1]
-                line = line.rstrip(';')
-                line = line.replace('""', '"')
-                row = next(csv.reader([line], delimiter=',', quotechar='"'))  # parser da linha
-                if header is None:
-                    header = row
-                    continue
-                if len(row) != 20:
-                    continue
-                (
-                    contrato,
-                    inicio,
-                    fim,
-                    empresa,
-                    icj,
-                    valor_original,
-                    moeda,
-                    taxa_cambio,
-                    gerente,
-                    modalidade,
-                    texto_modalidade,
-                    reajuste,
-                    fornecedor,
-                    nome_fornecedor,
-                    tipo_contrato,
-                    objeto_contrato,
-                    item_pedido,
-                    descricao_item,
-                    numero_externo,
-                    descricao_item2,
-                ) = row
+            contracts: dict[str, dict] = {}
+            with open(self.csv_path, encoding="utf8") as f:
+                # Leitura linha a linha do CSV
+                header: list[str] | None = None
+                for line in f:
+                    line = line.strip()
+                    if not line or not line.startswith('"'):
+                        continue
+                    line = line[1:]
+                    if line.endswith('"'):
+                        line = line[:-1]
+                    line = line.rstrip(';')
+                    line = line.replace('""', '"')
+                    row = next(csv.reader([line], delimiter=",", quotechar='"'))
+                    if header is None:
+                        header = row
+                        continue
+                    if len(row) != 20:
+                        continue
+                    (
+                        contrato,
+                        inicio,
+                        fim,
+                        empresa,
+                        icj,
+                        valor_original,
+                        moeda,
+                        taxa_cambio,
+                        gerente,
+                        modalidade,
+                        texto_modalidade,
+                        reajuste,
+                        fornecedor,
+                        nome_fornecedor,
+                        tipo_contrato,
+                        objeto_contrato,
+                        item_pedido,
+                        descricao_item,
+                        numero_externo,
+                        descricao_item2,
+                    ) = row
 
-                service = {
-                    "ItemPedido": item_pedido,
-                    "DescricaoItem": descricao_item,
-                    "NumeroExterno": numero_externo,
-                    "DescriçãoItem": descricao_item2,
-                }
-
-                if contrato not in contracts:
-                    contracts[contrato] = {
-                        "name": contrato,
-                        "path": contrato,
-                        "contrato": contrato,
-                        "ingestion_date": datetime.utcnow(),
-                        "last_processed": datetime.utcnow(),
-                        "inicioPrazo": self._parse_date(inicio),
-                        "fimPrazo": self._parse_date(fim),
-                        "empresa": empresa,
-                        "icj": icj,
-                        "valorContratoOriginal": self._parse_float(valor_original),
-                        "moeda": moeda,
-                        "taxaCambio": self._parse_float(taxa_cambio),
-                        "gerenteContrato": gerente,
-                        "modalidade": modalidade,
-                        "textoModalidade": texto_modalidade,
-                        "reajuste": reajuste,
-                        "fornecedor": fornecedor,
-                        "nomeFornecedor": nome_fornecedor,
-                        "tipoContrato": tipo_contrato,
-                        "objetoContrato": objeto_contrato,
-                        "linhasServico": [service],
+                    service = {
+                        "ItemPedido": item_pedido,
+                        "DescricaoItem": descricao_item,
+                        "NumeroExterno": numero_externo,
+                        "DescriçãoItem": descricao_item2,
                     }
-                else:
-                    contracts[contrato]["linhasServico"].append(service)
 
-        total = len(contracts)
-        processed = 0
-        for data in contracts.values():  # grava cada contrato
-            if self.relational_db.get_contract_by_contrato(data["contrato"]):
+                    if contrato not in contracts:
+                        contracts[contrato] = {
+                            "name": contrato,
+                            "path": contrato,
+                            "contrato": contrato,
+                            "ingestion_date": datetime.utcnow(),
+                            "last_processed": datetime.utcnow(),
+                            "inicioPrazo": self._parse_date(inicio),
+                            "fimPrazo": self._parse_date(fim),
+                            "empresa": empresa,
+                            "icj": icj,
+                            "valorContratoOriginal": self._parse_float(valor_original),
+                            "moeda": moeda,
+                            "taxaCambio": self._parse_float(taxa_cambio),
+                            "gerenteContrato": gerente,
+                            "modalidade": modalidade,
+                            "textoModalidade": texto_modalidade,
+                            "reajuste": reajuste,
+                            "fornecedor": fornecedor,
+                            "nomeFornecedor": nome_fornecedor,
+                            "tipoContrato": tipo_contrato,
+                            "objetoContrato": objeto_contrato,
+                            "linhasServico": [service],
+                        }
+                    else:
+                        contracts[contrato]["linhasServico"].append(service)
+
+            total = len(contracts)
+            processed = 0
+            for data in contracts.values():
+                if self.relational_db.get_contract_by_contrato(data["contrato"]):
+                    processed += 1
+                    self.progress = processed / total * 100
+                    tracker.update(progress=self.progress)
+                    continue
+                emp = self._resolver.resolve(data["gerenteContrato"])
+                data["nomeGerenteContrato"] = emp["nome"]
+                data["lotacaoGerenteContrato"] = emp["lotacao"]
+                data["linhasServico"] = json.dumps(
+                    data["linhasServico"], ensure_ascii=False
+                )
+                self.relational_db.add_contract_structured(**data)
                 processed += 1
                 self.progress = processed / total * 100
-                continue
-            emp = self._resolver.resolve(data["gerenteContrato"])
-            data["nomeGerenteContrato"] = emp["nome"]
-            data["lotacaoGerenteContrato"] = emp["lotacao"]
-            data["linhasServico"] = json.dumps(data["linhasServico"], ensure_ascii=False)
-            self.relational_db.add_contract_structured(**data)  # insere registro no banco
-            processed += 1
-            self.progress = processed / total * 100
+                tracker.update(progress=self.progress)
+
+            tracker.finish()
+        except Exception:
+            tracker.finish(status="failed")
+            raise
 
     def _parse_date(self, value: str) -> date | None:
         """Converte string de data para objeto date"""

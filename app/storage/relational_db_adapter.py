@@ -47,6 +47,20 @@ class Contract(Base):
     linhasServico = Column(String, nullable=True)
 
 
+# Modelo ORM representando as execuções de tarefas
+class Execution(Base):
+    __tablename__ = "executions"
+
+    id = Column(Integer, primary_key=True)
+    task_name = Column(String, nullable=False)
+    class_name = Column(String, nullable=False)
+    start_time = Column(DateTime, default=datetime.utcnow)
+    end_time = Column(DateTime, nullable=True)
+    status = Column(String, default="running")
+    progress = Column(Float, default=0.0)
+    message = Column(String, nullable=True)
+
+
 # Adaptador simples para persistência usando SQLite
 class RelationalDBAdapter:
     """Simple SQLite wrapper for storing contract metadata."""
@@ -117,5 +131,56 @@ class RelationalDBAdapter:
         """Remove todos os registros da tabela."""
         session = self._Session()
         session.query(Contract).delete()
+        session.commit()
+        session.close()
+
+    # ------------------------------------------------------------------
+    # Operações relacionadas à tabela de execuções de tarefas
+
+    def create_execution(self, task_name: str, class_name: str) -> int:
+        """Insere registro de início de execução."""
+        session = self._Session()
+        exec_row = Execution(task_name=task_name, class_name=class_name)
+        session.add(exec_row)
+        session.commit()
+        exec_id = exec_row.id
+        session.close()
+        return exec_id
+
+    def get_execution(self, exec_id: int) -> Execution | None:
+        """Busca execução pelo identificador."""
+        session = self._Session()
+        row = session.query(Execution).filter_by(id=exec_id).first()
+        session.close()
+        return row
+
+    def update_execution(
+        self,
+        exec_id: int,
+        *,
+        progress: float | None = None,
+        status: str | None = None,
+        end_time: datetime | None = None,
+        message: str | None = None,
+    ) -> None:
+        """Atualiza campos da execução."""
+        session = self._Session()
+        row = session.query(Execution).filter_by(id=exec_id).first()
+        if row:
+            if progress is not None:
+                row.progress = progress
+            if status is not None:
+                row.status = status
+            if end_time is not None:
+                row.end_time = end_time
+            if message is not None:
+                row.message = message
+            session.commit()
+        session.close()
+
+    def clear_executions(self) -> None:
+        """Remove todas as execuções."""
+        session = self._Session()
+        session.query(Execution).delete()
         session.commit()
         session.close()
