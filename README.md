@@ -58,4 +58,7 @@ poetry install
 # Rodar o app
 poetry run python main.py
 
+# Executar a API FastAPI
+poetry run python api_main.py
+
 Este projeto está em desenvolvimento contínuo. As tecnologias utilizadas estão organizadas de forma modular para permitir futura substituição de bancos e serviços (ex: ChromaDB por OpenSearch, SQLite por Cloud SQL, etc).
