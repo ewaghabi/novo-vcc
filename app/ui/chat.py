@@ -1,13 +1,13 @@
 # Interface de usuário baseada em Streamlit
 import streamlit as st
 
-from app.chat import ContractChatbot
-from app.storage.vector_store_adapter import VectorStoreAdapter
+import httpx
+
+from app.config import API_BASE_URL
 
 
-# Inicializa o armazenamento vetorial e o chatbot
-_vector_store = VectorStoreAdapter()
-_chatbot = ContractChatbot(_vector_store)
+# Endpoint da API de chat
+_CHAT_ENDPOINT = f"{API_BASE_URL.rstrip('/')}/chat"
 
 
 def main() -> None:
@@ -24,7 +24,16 @@ def main() -> None:
 
     question = st.text_input("Faça sua pergunta sobre os contratos:")  # entrada do usuário
     if question:
-        answer, sources = _chatbot.ask(question)  # consulta o modelo
+        try:
+            response = httpx.post(_CHAT_ENDPOINT, json={"question": question}, timeout=30.0)
+            response.raise_for_status()
+            data = response.json()
+            answer = data.get("answer", "")
+            sources = data.get("sources", [])
+        except Exception as exc:
+            st.error(f"Erro ao consultar a API: {exc}")
+            return
+
         st.markdown("## Resposta")
         st.write(answer)
 

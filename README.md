@@ -55,10 +55,12 @@ poetry install
 
 # Criar .env com chave da OpenAI (exemplo no .env.example)
 
-# Rodar o app
-poetry run python main.py
-
 # Executar a API FastAPI
 poetry run python api_main.py
+
+# Rodar a interface Streamlit (a API deve estar rodando separadamente)
+# Caso a API esteja em outro host/porta, defina a variável de ambiente
+# `API_BASE_URL` apontando para o novo endereço.
+poetry run python main.py
 
 Este projeto está em desenvolvimento contínuo. As tecnologias utilizadas estão organizadas de forma modular para permitir futura substituição de bancos e serviços (ex: ChromaDB por OpenSearch, SQLite por Cloud SQL, etc).
