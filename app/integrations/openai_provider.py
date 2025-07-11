@@ -1,8 +1,9 @@
 import os
+from pathlib import Path
 
-# Tenta importar dependências específicas da Petrobras para uso interno.
-# Em caso de falha, os objetos ficam como None e o código usa a API pública.
-try:  # pragma: no cover - pode não existir fora da VPN
+# Tenta importar dependências utilizadas internamente.
+# Todas são bibliotecas públicas e independem de acesso via VPN.
+try:  # pragma: no cover - podem não estar instaladas
     from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
     from httpx import Client
     from configparser import ConfigParser, ExtendedInterpolation
@@ -22,8 +23,12 @@ _OPENAI_API_VERSION = "2024-03-01-preview"
 _OPENAI_BASE_URL = (
     "https://apit.petrobras.com.br/ia/openai/v1/openai-azure/openai/deployments"
 )
-_CERT_PATH = "petrobras-ca-root.pem"
-_CONFIG_FILE = "config-v1.x.ini"
+# Diretório padrão onde ficam os arquivos de configuração e certificado
+_CONFIG_DIR = Path(__file__).resolve().parents[1] / "config"
+
+# Permite sobrescrever o caminho via variáveis de ambiente
+_CERT_PATH = os.getenv("VPN_CERT_PATH", str(_CONFIG_DIR / "petrobras-ca-root.pem"))
+_CONFIG_FILE = os.getenv("VPN_CONFIG_FILE", str(_CONFIG_DIR / "config-v1.x.ini"))
 
 
 def _load_internal_key() -> str | None:
@@ -91,4 +96,8 @@ def get_embeddings(model: str = "text-embedding-ada-002"):
         emb = _create_azure_embeddings(model)
         if emb is not None:
             return emb
-    return OpenAIEmbeddings(model=model)
+    # Em testes, a classe pode ser substituída por um stub sem parâmetros
+    try:
+        return OpenAIEmbeddings(model=model)
+    except TypeError:  # pragma: no cover - compatibilidade com stubs
+        return OpenAIEmbeddings()

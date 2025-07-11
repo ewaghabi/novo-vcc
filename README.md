@@ -63,6 +63,13 @@ poetry run python api_main.py
 # `API_BASE_URL` apontando para o novo endereço.
 poetry run python main.py
 
+### Integração com VPN (opcional)
+
+Se desejar utilizar os serviços internos de IA da Petrobras, coloque os arquivos
+`petrobras-ca-root.pem` e `config-v1.x.ini` no diretório `app/config`. Caso
+precise apontar para outro local, defina as variáveis `VPN_CERT_PATH` e
+`VPN_CONFIG_FILE` com os caminhos completos de cada arquivo.
+
 ## 📑 Rotas da API
 
 | Rota | Método | Descrição | Parâmetros | Retorno |
