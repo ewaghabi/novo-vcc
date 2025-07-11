@@ -8,6 +8,7 @@ from sqlalchemy import (
     Date,
     Float,
     Numeric,
+    ForeignKey,
 )
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -49,6 +50,16 @@ class Contract(Base):
     texto_completo = Column(String, nullable=True)
 
 
+# Tabela que armazena prompts reutilizáveis para execução de análises
+class Prompt(Base):
+    __tablename__ = "prompts"
+
+    id = Column(Integer, primary_key=True)
+    nome = Column(String, nullable=False)
+    texto = Column(String, nullable=False)
+    periodicidade = Column(String, nullable=True)
+
+
 # Modelo ORM representando as execuções de tarefas
 class Execution(Base):
     __tablename__ = "executions"
@@ -56,11 +67,27 @@ class Execution(Base):
     id = Column(Integer, primary_key=True)
     task_name = Column(String, nullable=False)
     class_name = Column(String, nullable=False)
+    # Campos adicionais para registrar o contexto do prompt executado
+    tipo = Column(String, nullable=True)
+    prompt_id = Column(Integer, ForeignKey("prompts.id"), nullable=True)
+    prompt_text = Column(String, nullable=True)
     start_time = Column(DateTime, default=datetime.utcnow)
     end_time = Column(DateTime, nullable=True)
     status = Column(String, default="running")
     progress = Column(Float, default=0.0)
     message = Column(String, nullable=True)
+
+
+# Resultado gerado após uma execução em um contrato específico
+class ExecutionResult(Base):
+    __tablename__ = "execution_results"
+
+    id = Column(Integer, primary_key=True)
+    execution_id = Column(Integer, ForeignKey("executions.id"), nullable=False)
+    contract_id = Column(Integer, ForeignKey("contracts.id"), nullable=True)
+    resposta_completa = Column(String, nullable=True)
+    resposta_simples = Column(String, nullable=True)
+    confianca = Column(Float, nullable=True)
 
 
 # Adaptador simples para persistência usando SQLite
@@ -145,13 +172,104 @@ class RelationalDBAdapter:
         session.close()
 
     # ------------------------------------------------------------------
+    # Operações para tabela de prompts
+
+    def add_prompt(
+        self,
+        nome: str,
+        texto: str,
+        periodicidade: str | None = None,
+    ) -> int:
+        """Insere um novo prompt e retorna seu ID."""
+        session = self._Session()
+        row = Prompt(nome=nome, texto=texto, periodicidade=periodicidade)
+        session.add(row)
+        session.commit()
+        pid = row.id
+        session.close()
+        return pid
+
+    def list_prompts(self) -> list[Prompt]:
+        """Lista todos os prompts cadastrados."""
+        session = self._Session()
+        rows = session.query(Prompt).order_by(Prompt.id).all()
+        session.close()
+        return rows
+
+    def get_prompt(self, prompt_id: int) -> Prompt | None:
+        """Recupera um prompt pelo id."""
+        session = self._Session()
+        row = session.query(Prompt).filter_by(id=prompt_id).first()
+        session.close()
+        return row
+
+    def update_prompt(self, prompt_id: int, **fields) -> None:
+        """Atualiza campos de um prompt existente."""
+        session = self._Session()
+        row = session.query(Prompt).filter_by(id=prompt_id).first()
+        if row:
+            for key, value in fields.items():
+                setattr(row, key, value)
+            session.commit()
+        session.close()
+
+    def delete_prompt(self, prompt_id: int) -> None:
+        """Remove um prompt do banco."""
+        session = self._Session()
+        row = session.query(Prompt).filter_by(id=prompt_id).first()
+        if row:
+            session.delete(row)
+            session.commit()
+        session.close()
+
+    # ------------------------------------------------------------------
+    # Operações para resultados de execução
+
+    def add_execution_result(
+        self,
+        execution_id: int,
+        contract_id: int | None,
+        resposta_completa: str | None,
+        resposta_simples: str | None,
+        confianca: float | None = None,
+    ) -> int:
+        """Registra resultado produzido por uma execução."""
+        session = self._Session()
+        row = ExecutionResult(
+            execution_id=execution_id,
+            contract_id=contract_id,
+            resposta_completa=resposta_completa,
+            resposta_simples=resposta_simples,
+            confianca=confianca,
+        )
+        session.add(row)
+        session.commit()
+        rid = row.id
+        session.close()
+        return rid
+
+    # ------------------------------------------------------------------
     # Operações relacionadas à tabela de execuções de tarefas
 
     # Cria registro inicial de uma execução de tarefa
-    def create_execution(self, task_name: str, class_name: str) -> int:
+    def create_execution(
+        self,
+        task_name: str,
+        class_name: str,
+        *,
+        tipo: str | None = None,
+        prompt_id: int | None = None,
+        prompt_text: str | None = None,
+    ) -> int:
         """Insere registro de início de execução."""
         session = self._Session()
-        exec_row = Execution(task_name=task_name, class_name=class_name)
+        exec_row = Execution(
+            task_name=task_name,
+            class_name=class_name,
+            tipo=tipo,
+            prompt_id=prompt_id,
+            prompt_text=prompt_text,
+        )
         session.add(exec_row)
         session.commit()
         exec_id = exec_row.id

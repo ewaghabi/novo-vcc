@@ -216,3 +216,33 @@ def test_chat_endpoint_accepts_model(monkeypatch):
     assert resp.status_code == 200
     assert created["bot"].model == "my-model"
     assert created["bot"].questions == ["oi"]
+
+
+# CRUD completo de prompts via API
+def test_prompts_crud_via_api(monkeypatch, tmp_path):
+    db_path = tmp_path / "db.sqlite"
+    db = routes.RelationalDBAdapter(db_url=f"sqlite:///{db_path}")
+    monkeypatch.setattr(routes, "_relational_db", db)
+    client = TestClient(app)
+
+    resp = client.post(
+        "/prompts",
+        json={"nome": "Teste", "texto": "Oi?", "periodicidade": "diario"},
+    )
+    assert resp.status_code == 200
+    pid = resp.json()["id"]
+
+    resp = client.get("/prompts")
+    assert resp.status_code == 200
+    assert len(resp.json()["prompts"]) == 1
+
+    resp = client.put(f"/prompts/{pid}", json={"nome": "Novo"})
+    assert resp.status_code == 200
+
+    resp = client.get(f"/prompts/{pid}")
+    assert resp.json()["nome"] == "Novo"
+
+    resp = client.delete(f"/prompts/{pid}")
+    assert resp.status_code == 200
+    resp = client.get("/prompts")
+    assert resp.json()["prompts"] == []

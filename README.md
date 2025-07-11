@@ -71,6 +71,13 @@ poetry run python main.py
 | `/ingest-structured` | POST | Carrega o CSV de contratos estruturados | nenhum | `{"status": "ok", "progress": n}` |
 | `/chat` | POST | Consulta o chatbot sobre os contratos | `question` no corpo | `{"answer": str, "sources": []}` |
 | `/contracts` | GET | Lista todos os contratos armazenados | nenhum | `{"contracts": [...]}` |
+| `/contract/{id}` | GET | Recupera um contrato pelo código | nenhum | `{...}` |
 | `/executions` | GET | Lista execuções de tarefas | `status`, `start`, `end` | `{"executions": [...]}` |
+| `/executions/{id}` | GET | Detalha uma execução específica | nenhum | `{...}` |
+| `/prompts` | POST | Cadastra novo prompt | `nome`, `texto`, `periodicidade` | `{"id": n}` |
+| `/prompts` | GET | Lista todos os prompts | nenhum | `{"prompts": [...]}` |
+| `/prompts/{id}` | GET | Consulta um prompt | nenhum | `{...}` |
+| `/prompts/{id}` | PUT | Atualiza um prompt | campos do prompt | `{"status": "ok"}` |
+| `/prompts/{id}` | DELETE | Remove um prompt | nenhum | `{"status": "ok"}` |
 
 Este projeto está em desenvolvimento contínuo. As tecnologias utilizadas estão organizadas de forma modular para permitir futura substituição de bancos e serviços (ex: ChromaDB por OpenSearch, SQLite por Cloud SQL, etc).
