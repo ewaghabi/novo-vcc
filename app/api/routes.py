@@ -3,7 +3,11 @@ from datetime import datetime
 
 from app.ingestion.ingestor import ContractIngestor, ContractStructuredDataIngestor
 from app.storage.vector_store_adapter import VectorStoreAdapter
-from app.storage.relational_db_adapter import RelationalDBAdapter, Contract
+from app.storage.relational_db_adapter import (
+    RelationalDBAdapter,
+    Contract,
+    Prompt,
+)
 from app.chat.chatbot import ContractChatbot
 
 router = APIRouter()
@@ -147,3 +151,63 @@ def get_execution(exec_id: int) -> dict:
         "progress": row.progress,
         "message": row.message,
     }
+
+
+# ------------------------------------------------------------
+# Endpoints relacionados aos prompts cadastrados
+
+@router.post("/prompts")
+def create_prompt(
+    nome: str = Body(..., embed=True),
+    texto: str = Body(..., embed=True),
+    periodicidade: str | None = Body(None, embed=True),
+) -> dict:
+    """Cadastra um novo prompt no banco."""
+    pid = _relational_db.add_prompt(nome=nome, texto=texto, periodicidade=periodicidade)
+    return {"id": pid}
+
+
+@router.get("/prompts")
+def list_prompts() -> dict:
+    """Lista todos os prompts cadastrados."""
+    rows = _relational_db.list_prompts()
+    prompts = [
+        {"id": p.id, "nome": p.nome, "texto": p.texto, "periodicidade": p.periodicidade}
+        for p in rows
+    ]
+    return {"prompts": prompts}
+
+
+@router.get("/prompts/{prompt_id}")
+def get_prompt(prompt_id: int) -> dict:
+    """Retorna um único prompt pelo id."""
+    row = _relational_db.get_prompt(prompt_id)
+    if not row:
+        return {}
+    return {"id": row.id, "nome": row.nome, "texto": row.texto, "periodicidade": row.periodicidade}
+
+
+@router.put("/prompts/{prompt_id}")
+def update_prompt(
+    prompt_id: int,
+    nome: str | None = Body(None, embed=True),
+    texto: str | None = Body(None, embed=True),
+    periodicidade: str | None = Body(None, embed=True),
+) -> dict:
+    """Atualiza os campos de um prompt existente."""
+    fields = {}
+    if nome is not None:
+        fields["nome"] = nome
+    if texto is not None:
+        fields["texto"] = texto
+    if periodicidade is not None:
+        fields["periodicidade"] = periodicidade
+    _relational_db.update_prompt(prompt_id, **fields)
+    return {"status": "ok"}
+
+
+@router.delete("/prompts/{prompt_id}")
+def delete_prompt(prompt_id: int) -> dict:
+    """Remove um prompt do banco."""
+    _relational_db.delete_prompt(prompt_id)
+    return {"status": "ok"}

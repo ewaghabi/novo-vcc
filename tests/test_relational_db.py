@@ -10,6 +10,7 @@ if str(ROOT) not in sys.path:
 from app.storage.relational_db_adapter import (
     Contract,
     Execution,
+    Prompt,
     RelationalDBAdapter,
 )
 
@@ -131,5 +132,38 @@ def test_execution_crud_operations():
     db.clear_executions()
     session = db._Session()
     count = session.query(Execution).count()
+    session.close()
+    assert count == 0
+
+
+# Confere campos padrão do modelo Execution
+def test_execution_model_defaults():
+    """Verifica novos campos opcionais do modelo Execution."""
+    e = Execution(task_name="t", class_name="C")
+    assert e.tipo is None
+    assert e.prompt_id is None
+    assert e.prompt_text is None
+    assert Execution.__tablename__ == "executions"
+
+
+# Testa operações de CRUD de prompts
+def test_prompt_crud_operations():
+    """Insere, atualiza e remove prompts."""
+    db = RelationalDBAdapter(db_url="sqlite:///:memory:")
+    pid = db.add_prompt(nome="Pergunta", texto="Qual o prazo?", periodicidade="mensal")
+    db.update_prompt(pid, periodicidade="semanal")
+
+    session = db._Session()
+    row = session.query(Prompt).first()
+    session.close()
+
+    assert row.id == pid
+    assert row.nome == "Pergunta"
+    assert row.texto == "Qual o prazo?"
+    assert row.periodicidade == "semanal"
+
+    db.delete_prompt(pid)
+    session = db._Session()
+    count = session.query(Prompt).count()
     session.close()
     assert count == 0
