@@ -1,4 +1,3 @@
-from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from app.integrations.openai_provider import get_embeddings
 from pathlib import Path
