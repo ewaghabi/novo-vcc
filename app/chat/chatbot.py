@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import List, Tuple
 
-from langchain.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQA
+from app.integrations.openai_provider import get_chat_model
 
 from app.storage.vector_store_adapter import VectorStoreAdapter
 
@@ -16,7 +16,8 @@ class ContractChatbot:
     def __init__(self, vector_store: VectorStoreAdapter, model: str = "gpt-3.5-turbo") -> None:
         # Guarda a referência ao repositório vetorial
         self._vector_store = vector_store
-        self._llm = ChatOpenAI(model=model)
+        # Obtém o modelo adequado ao ambiente (interno ou público)
+        self._llm = get_chat_model(model=model)
         # Cria cadeia de consulta com base no Chroma
         self._chain = RetrievalQA.from_chain_type(
             llm=self._llm,

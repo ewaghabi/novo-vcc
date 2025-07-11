@@ -18,6 +18,8 @@ sys.modules.setdefault("langchain", langchain_stub)
 sys.modules.setdefault("langchain.embeddings", langchain_stub.embeddings)
 sys.modules.setdefault("langchain.vectorstores", langchain_stub.vectorstores)
 
+import app.integrations.openai_provider as openai_provider
+
 from app.storage import vector_store_adapter
 
 
@@ -48,7 +50,7 @@ def test_add_and_persist(monkeypatch):
         return dummy_store
 
     monkeypatch.setattr(vector_store_adapter, "Chroma", dummy_chroma)
-    monkeypatch.setattr(vector_store_adapter, "OpenAIEmbeddings", lambda: DummyEmbeddings())
+    monkeypatch.setattr(openai_provider, "get_embeddings", lambda: DummyEmbeddings())
 
     adapter = vector_store_adapter.VectorStoreAdapter(persist_directory="test_db")
 
@@ -72,7 +74,7 @@ def test_clear_reinitializes_store(monkeypatch, tmp_path):
         return second_store
 
     monkeypatch.setattr(vector_store_adapter, "Chroma", first_chroma)
-    monkeypatch.setattr(vector_store_adapter, "OpenAIEmbeddings", lambda: DummyEmbeddings())
+    monkeypatch.setattr(openai_provider, "get_embeddings", lambda: DummyEmbeddings())
     adapter = vector_store_adapter.VectorStoreAdapter(persist_directory=str(tmp_path))
     assert adapter._store is first_store
 

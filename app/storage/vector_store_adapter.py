@@ -1,5 +1,6 @@
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
+from app.integrations.openai_provider import get_embeddings
 from pathlib import Path
 import shutil
 
@@ -13,7 +14,8 @@ class VectorStoreAdapter:
     def __init__(self, persist_directory: str = "chroma_db") -> None:
         # Diretório onde o Chroma irá persistir os dados
         self._persist_directory = persist_directory
-        self._embedding = OpenAIEmbeddings()
+        # Instancia embeddings adequados ao ambiente (interno ou público)
+        self._embedding = get_embeddings()
         self._store = Chroma(
             persist_directory=persist_directory, embedding_function=self._embedding
         )
