@@ -177,6 +177,8 @@ def test_get_contract_by_contrato(monkeypatch):
                 tipoContrato=None,
                 objetoContrato=None,
                 linhasServico=None,
+                vetor_embedding=None,
+                texto_completo=None,
             )
 
         def get_contract_by_contrato(self, contrato):

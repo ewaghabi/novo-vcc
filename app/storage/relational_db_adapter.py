@@ -45,6 +45,8 @@ class Contract(Base):
     tipoContrato = Column(String, nullable=True)
     objetoContrato = Column(String, nullable=True)
     linhasServico = Column(String, nullable=True)
+    vetor_embedding = Column(String, nullable=True)
+    texto_completo = Column(String, nullable=True)
 
 
 # Modelo ORM representando as execuções de tarefas
