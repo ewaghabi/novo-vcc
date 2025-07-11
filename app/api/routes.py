@@ -9,6 +9,7 @@ from app.storage.relational_db_adapter import (
     Prompt,
 )
 from app.chat.chatbot import ContractChatbot
+from app.processing.execution import ExhaustiveProcessor
 
 router = APIRouter()
 
@@ -211,3 +212,15 @@ def delete_prompt(prompt_id: int) -> dict:
     """Remove um prompt do banco."""
     _relational_db.delete_prompt(prompt_id)
     return {"status": "ok"}
+
+
+# ------------------------------------------------------------
+# Endpoint para execução exaustiva de prompts
+
+@router.post("/execute")
+async def execute_prompts(prompt: str | None = Body(None, embed=True)) -> dict:
+    """Dispara processamento dos contratos com prompts."""
+    processor = ExhaustiveProcessor(_vector_store, _relational_db)
+    ids = await processor.run(prompt=prompt)
+    return {"ids": ids}
+

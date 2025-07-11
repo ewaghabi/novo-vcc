@@ -246,3 +246,26 @@ def test_prompts_crud_via_api(monkeypatch, tmp_path):
     assert resp.status_code == 200
     resp = client.get("/prompts")
     assert resp.json()["prompts"] == []
+
+# Verifica acionamento do ExhaustiveProcessor via API
+
+def test_execute_endpoint_calls_processor(monkeypatch):
+    class DummyProcessor:
+        def __init__(self, *args, **kwargs):
+            self.prompt = None
+        async def run(self, prompt=None):
+            self.prompt = prompt
+            return [99]
+
+    proc = DummyProcessor()
+    monkeypatch.setattr(routes, "ExhaustiveProcessor", lambda *a, **k: proc)
+    client = TestClient(app)
+    resp = client.post("/execute", json={"prompt": "Perg?"})
+    assert resp.status_code == 200
+    assert resp.json() == {"ids": [99]}
+    assert proc.prompt == "Perg?"
+
+    resp = client.post("/execute", json={})
+    assert resp.status_code == 200
+    assert proc.prompt is None
+
