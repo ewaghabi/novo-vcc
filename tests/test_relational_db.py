@@ -50,6 +50,8 @@ def test_contract_model_attributes():
     assert c.tipoContrato is None
     assert c.objetoContrato is None
     assert c.linhasServico is None
+    assert c.vetor_embedding is None
+    assert c.texto_completo is None
 
 
 # Testa inserção de contrato no banco
@@ -86,6 +88,8 @@ def test_add_contract_inserts_into_db():
     assert row.tipoContrato is None
     assert row.objetoContrato is None
     assert row.linhasServico is None
+    assert row.vetor_embedding is None
+    assert row.texto_completo is None
 
 
 # Checa atualização da data de processamento
