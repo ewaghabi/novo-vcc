@@ -195,6 +195,41 @@ def test_get_contract_by_contrato(monkeypatch):
     assert resp.json() == {}
 
 
+# Verifica paginação na listagem de contratos
+def test_contracts_pagination(monkeypatch, tmp_path):
+    db_path = tmp_path / "db.sqlite"
+    db = routes.RelationalDBAdapter(db_url=f"sqlite:///{db_path}")
+    for i in range(5):
+        db.add_contract_structured(
+            contrato=f"C{i}",
+            lotacaoGerenteContrato=f"A{i}",
+            valorContratoOriginal=100 + i,
+            moeda="BRL",
+        )
+
+    monkeypatch.setattr(routes, "_relational_db", db)
+    client = TestClient(app)
+
+    resp = client.get("/contracts", params={"page": 1, "page_size": 2})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total"] == 5
+    assert len(data["contracts"]) == 2
+
+
+# Checa geração do relatório via endpoint
+def test_contract_report_endpoint(monkeypatch, tmp_path):
+    db_path = tmp_path / "db.sqlite"
+    db = routes.RelationalDBAdapter(db_url=f"sqlite:///{db_path}")
+    db.add_contract_structured(contrato="C1", linhasServico=None)
+
+    monkeypatch.setattr(routes, "_relational_db", db)
+    client = TestClient(app)
+    resp = client.get("/contract/C1/report")
+    assert resp.status_code == 200
+    assert "contrato: C1" in resp.json()["report"]
+
+
 # Confere uso do parâmetro model na rota /chat
 def test_chat_endpoint_accepts_model(monkeypatch):
     class DummyBot(DummyChatbot):
