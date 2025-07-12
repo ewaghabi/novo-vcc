@@ -8,6 +8,7 @@ from app.storage.relational_db_adapter import (
     Contract,
     Prompt,
 )
+from app.models.contrato import Contrato
 from app.chat.chatbot import ContractChatbot
 from app.processing.execution import ExhaustiveProcessor
 
@@ -54,25 +55,34 @@ def chat(
     return {"answer": answer, "sources": sources}
 
 
-# Lista todos os contratos armazenados
+# Lista paginável de contratos
 @router.get("/contracts")
-def list_contracts() -> dict:
-    """Return a simple list of stored contracts."""
+def list_contracts(page: int = 1, page_size: int = 50) -> dict:
+    """Retorna lista paginada de contratos cadastrados."""
+
     session = _relational_db._Session()
-    rows = session.query(Contract).all()
-    # Monta lista de dicionários a partir dos objetos
+    query = session.query(Contract).order_by(Contract.contrato)
+    total = query.count()
+    rows = (
+        query.offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+
+    # Apenas campos necessários para a tabela da UI
     contracts = [
         {
-            "id": r.id,
-            "name": r.name,
-            "path": r.path,
-            "ingestion_date": r.ingestion_date.isoformat() if r.ingestion_date else None,
-            "last_processed": r.last_processed.isoformat() if r.last_processed else None,
+            "contrato": r.contrato,
+            "lotacaoGerenteContrato": r.lotacaoGerenteContrato,
+            "valorContratoOriginal": float(r.valorContratoOriginal)
+            if r.valorContratoOriginal is not None
+            else None,
+            "moeda": r.moeda,
         }
         for r in rows
     ]
     session.close()
-    return {"contracts": contracts}
+    return {"contracts": contracts, "total": total}
 
 
 # Recupera detalhes de um contrato específico pelo número
@@ -110,6 +120,17 @@ def get_contract(contract_id: str) -> dict:
         "objetoContrato": row.objetoContrato,
         "linhasServico": row.linhasServico,
     }
+
+
+# Endpoint que devolve o relatório textual do contrato
+@router.get("/contract/{contract_id}/report")
+def contract_report(contract_id: str) -> dict:
+    """Gera relatório em texto do contrato informado."""
+    row = _relational_db.get_contract_by_contrato(contract_id)
+    if not row:
+        return {"report": ""}
+    contrato = Contrato.from_orm(row)
+    return {"report": contrato.relatorio()}
 
 
 # Consulta execuções registradas filtrando por status e período
