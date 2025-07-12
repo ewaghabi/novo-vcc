@@ -4,6 +4,8 @@ import httpx
 
 from app.config import API_BASE_URL
 from .prompts import render as render_prompts_tab
+# Nova aba para visualizar execuções
+from .executions import render as render_executions_tab
 
 # Endpoint da API de chat
 _CHAT_ENDPOINT = f"{API_BASE_URL.rstrip('/')}/chat"
@@ -36,7 +38,7 @@ def _chat_tab() -> None:
 
 
 def main() -> None:
-    """Renderiza a aplicação com abas Chat e Prompts."""
+    """Renderiza a aplicação com abas Chat, Prompts e Execuções."""
 
     st.set_page_config(page_title="Novo VCC", layout="centered")
 
@@ -44,13 +46,16 @@ def main() -> None:
         st.markdown("# Novo VCC")
         st.markdown("Utilize as abas acima")
 
-    aba_chat, aba_prompts = st.tabs(["Chat", "Prompts"])
+    aba_chat, aba_prompts, aba_exec = st.tabs(["Chat", "Prompts", "Execuções"])
 
     with aba_chat:
         _chat_tab()
 
     with aba_prompts:
         render_prompts_tab()
+
+    with aba_exec:
+        render_executions_tab()
 
 
 # Inicia a aplicação quando executado diretamente
