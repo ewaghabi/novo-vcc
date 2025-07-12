@@ -1,48 +1,56 @@
 # Interface de usuário baseada em Streamlit
 import streamlit as st
-
 import httpx
 
 from app.config import API_BASE_URL
-
+from .prompts import render as render_prompts_tab
 
 # Endpoint da API de chat
 _CHAT_ENDPOINT = f"{API_BASE_URL.rstrip('/')}/chat"
 
 
-# Função principal responsável por exibir a página
-def main() -> None:
-    """Renderiza a interface principal de chat."""
-    st.set_page_config(page_title="Novo VCC - Chat", layout="centered")
+def _chat_tab() -> None:
+    """Renderiza os controles da aba de chat."""
 
-    # Barra lateral com navegação
-    with st.sidebar:
-        st.markdown("# Novo VCC")
-        st.markdown("[Chat](#)")
-        st.markdown("[Config](#)")
+    st.markdown("## Chat sobre contratos")
 
-    st.title("Chat sobre contratos")  # cabeçalho principal
-
-    question = st.text_input("Faça sua pergunta sobre os contratos:")  # entrada do usuário
-    if question:
-        # Envia a pergunta para a API
+    pergunta = st.text_input("Faça sua pergunta sobre os contratos:")
+    if pergunta:
         try:
-            response = httpx.post(_CHAT_ENDPOINT, json={"question": question}, timeout=30.0)
-            response.raise_for_status()
-            data = response.json()
-            answer = data.get("answer", "")
-            sources = data.get("sources", [])
-        except Exception as exc:
+            resp = httpx.post(_CHAT_ENDPOINT, json={"question": pergunta}, timeout=30.0)
+            resp.raise_for_status()
+            dados = resp.json()
+            resposta = dados.get("answer", "")
+            fontes = dados.get("sources", [])
+        except Exception as exc:  # Trata falhas ao chamar a API
             st.error(f"Erro ao consultar a API: {exc}")
             return
 
-        st.markdown("## Resposta")
-        st.write(answer)
+        st.markdown("### Resposta")
+        st.write(resposta)
 
-        if sources:
-            st.markdown("## Contratos relevantes")
-            for src in sources:  # lista de arquivos retornados
+        if fontes:
+            st.markdown("### Contratos relevantes")
+            for src in fontes:
                 st.write(src)
+
+
+def main() -> None:
+    """Renderiza a aplicação com abas Chat e Prompts."""
+
+    st.set_page_config(page_title="Novo VCC", layout="centered")
+
+    with st.sidebar:
+        st.markdown("# Novo VCC")
+        st.markdown("Utilize as abas acima")
+
+    aba_chat, aba_prompts = st.tabs(["Chat", "Prompts"])
+
+    with aba_chat:
+        _chat_tab()
+
+    with aba_prompts:
+        render_prompts_tab()
 
 
 # Inicia a aplicação quando executado diretamente
