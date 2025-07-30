@@ -1,4 +1,6 @@
-from langchain.vectorstores import Chroma
+# A classe Chroma mudou de local. Agora ela é fornecida
+# pelo pacote `langchain-chroma`.
+from langchain_chroma import Chroma
 from app.integrations.openai_provider import get_embeddings
 from pathlib import Path
 import shutil
@@ -7,21 +9,24 @@ import shutil
 # Envolve o Chroma para facilitar o uso pela aplicação
 # Classe adaptadora para interagir com o Chroma usando embeddings OpenAI
 class VectorStoreAdapter:
-    """Wrapper around Chroma vector store using OpenAI embeddings."""
+    """Wrapper em Português para o vector store Chroma usando embeddings OpenAI."""
 
     # Cria o objeto definindo diretório de persistência
     def __init__(self, persist_directory: str = "chroma_db") -> None:
-        # Diretório onde o Chroma irá persistir os dados
+        """Inicializa o adaptador com o caminho de persistência."""
+        # Diretório onde o Chroma irá manter seus arquivos
         self._persist_directory = persist_directory
-        # Instancia embeddings adequados ao ambiente (interno ou público)
+        # Embeddings específicos de acordo com o modo de execução
         self._embedding = get_embeddings()
+        # Cria ou carrega o banco vetorial
         self._store = Chroma(
-            persist_directory=persist_directory, embedding_function=self._embedding
+            persist_directory=persist_directory,
+            embedding_function=self._embedding,
         )
 
     # Insere um documento de texto no vetor
     def add_document(self, text: str, metadata: dict | None = None) -> None:
-        """Adiciona um texto com metadados ao vetor."""
+        """Adiciona um texto ao vetor, registrando metadados opcionais."""
         self._store.add_texts([text], metadatas=[metadata or {}])
 
     # Persiste as alterações realizadas

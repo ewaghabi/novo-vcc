@@ -54,6 +54,8 @@ pip install poetry
 poetry install
 
 # Criar .env com chave da OpenAI (exemplo no .env.example)
+# Para evitar chamadas externas do ChromaDB,
+# defina também `ANONYMIZED_TELEMETRY=False` no arquivo .env
 
 # Executar a API FastAPI
 poetry run python api_main.py
