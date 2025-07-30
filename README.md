@@ -70,6 +70,15 @@ Se desejar utilizar os serviços internos de IA da Petrobras, coloque os arquivo
 precise apontar para outro local, defina as variáveis `VPN_CERT_PATH` e
 `VPN_CONFIG_FILE` com os caminhos completos de cada arquivo.
 
+Para que o módulo `openai_provider` utilize essas configurações, exporte a
+variável `VPN_MODE=1` antes de executar a aplicação:
+
+```bash
+export VPN_MODE=1
+```
+
+Fora da VPN, basta não definir `VPN_MODE` (ou atribuir `0`).
+
 ## 📑 Rotas da API
 
 | Rota | Método | Descrição | Parâmetros | Retorno |
