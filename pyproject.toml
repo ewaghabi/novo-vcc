@@ -9,12 +9,13 @@ authors = ["Seu Nome <seuemail@example.com>"]
 [[tool.poetry.source]]
 name = "nexus"
 url = "http://nexus.petrobras.com.br/nexus/repository/pypi-all/simple/"
-priority = "supplemental"
+priority = "primary"
 
 [tool.poetry.dependencies]
 python = "^3.11"
 langchain = "*"
 chromadb = "*"
+langchain-chroma = "*"
 openai = "*"
 langchain-openai = "*"
 streamlit = "*"
