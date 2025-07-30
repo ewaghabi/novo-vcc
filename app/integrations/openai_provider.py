@@ -1,18 +1,16 @@
 import os
 from pathlib import Path
+from configparser import ConfigParser, ExtendedInterpolation
 
 # Tenta importar dependências utilizadas internamente.
 # Todas são bibliotecas públicas e independem de acesso via VPN.
 try:  # pragma: no cover - podem não estar instaladas
     from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
     from httpx import Client
-    from configparser import ConfigParser, ExtendedInterpolation
 except Exception:  # pragma: no cover - fora do ambiente interno
     AzureChatOpenAI = None
     AzureOpenAIEmbeddings = None
     Client = None
-    ConfigParser = None
-    ExtendedInterpolation = None
 
 # Importa classes padrão do LangChain para acesso público.
 from langchain.chat_models import ChatOpenAI
@@ -23,18 +21,24 @@ _OPENAI_API_VERSION = "2024-03-01-preview"
 _OPENAI_BASE_URL = (
     "https://apit.petrobras.com.br/ia/openai/v1/openai-azure/openai/deployments"
 )
-# Diretório padrão onde ficam os arquivos de configuração e certificado
+# Diretório onde ficam os arquivos de configuração fornecidos internamente.
+# A busca é feita automaticamente no subdiretório ``app/config``
 _CONFIG_DIR = Path(__file__).resolve().parents[1] / "config"
 
-# Permite sobrescrever o caminho via variáveis de ambiente
-_CERT_PATH = os.getenv("VPN_CERT_PATH", str(_CONFIG_DIR / "petrobras-ca-root.pem"))
-_CONFIG_FILE = os.getenv("VPN_CONFIG_FILE", str(_CONFIG_DIR / "config-v1.x.ini"))
+# Caminhos padrão do certificado e da configuração
+# Os nomes abaixo não precisam ser configurados manualmente: basta
+# colocar ``petrobras-ca-root.pem`` e ``config-v1.x.ini`` dentro de
+# ``app/config`` e o módulo fará a leitura automática.
+_CERT_PATH = _CONFIG_DIR / "petrobras-ca-root.pem"
+_CONFIG_FILE = _CONFIG_DIR / "config-v1.x.ini"
 
 
 def _load_internal_key() -> str | None:
     """Lê a chave de API do arquivo de configuração interno."""
-    if ConfigParser is None:  # Dependência ausente
+    # Caso o arquivo não exista, simplesmente retornamos ``None``
+    if not _CONFIG_FILE.exists():
         return None
+
     cfg = ConfigParser(interpolation=ExtendedInterpolation())
     try:
         cfg.read(_CONFIG_FILE, "UTF-8")
@@ -46,6 +50,9 @@ def _load_internal_key() -> str | None:
 def _create_azure_chat(model: str):
     """Instancia o cliente AzureChatOpenAI quando possível."""
     if AzureChatOpenAI is None:
+        return None
+    if not _CERT_PATH.exists():
+        # Certificado ausente: não é possível configurar o cliente interno
         return None
     key = _load_internal_key()
     if not key:
@@ -62,6 +69,9 @@ def _create_azure_chat(model: str):
 def _create_azure_embeddings(model: str):
     """Instancia AzureOpenAIEmbeddings quando disponível."""
     if AzureOpenAIEmbeddings is None:
+        return None
+    if not _CERT_PATH.exists():
+        # Certificado ausente: devolve ``None`` para forçar o fallback
         return None
     key = _load_internal_key()
     if not key:

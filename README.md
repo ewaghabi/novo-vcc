@@ -67,8 +67,8 @@ poetry run python main.py
 
 Se desejar utilizar os serviços internos de IA da Petrobras, coloque os arquivos
 `petrobras-ca-root.pem` e `config-v1.x.ini` no diretório `app/config`. Caso
-precise apontar para outro local, defina as variáveis `VPN_CERT_PATH` e
-`VPN_CONFIG_FILE` com os caminhos completos de cada arquivo.
+esses arquivos estejam presentes, o `openai_provider` fará a leitura automática
+sem precisar definir variáveis de ambiente adicionais.
 
 Para que o módulo `openai_provider` utilize essas configurações, exporte a
 variável `VPN_MODE=1` antes de executar a aplicação. Quando não definida, a
