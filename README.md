@@ -71,13 +71,14 @@ precise apontar para outro local, defina as variáveis `VPN_CERT_PATH` e
 `VPN_CONFIG_FILE` com os caminhos completos de cada arquivo.
 
 Para que o módulo `openai_provider` utilize essas configurações, exporte a
-variável `VPN_MODE=1` antes de executar a aplicação:
+variável `VPN_MODE=1` antes de executar a aplicação. Quando não definida, a
+aplicação considera `VPN_MODE=1` por padrão:
 
 ```bash
 export VPN_MODE=1
 ```
 
-Fora da VPN, basta não definir `VPN_MODE` (ou atribuir `0`).
+Fora da VPN, defina `VPN_MODE=0` para desabilitar o uso interno.
 
 ## 📑 Rotas da API
 

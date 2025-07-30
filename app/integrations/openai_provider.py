@@ -77,7 +77,9 @@ def _create_azure_embeddings(model: str):
 
 # Indica se devemos usar os serviços internos; controlado por variável de ambiente
 def _use_internal_services() -> bool:
-    return os.getenv("VPN_MODE") == "1"
+    """Retorna ``True`` quando o uso da VPN está habilitado."""
+    # Se a variável não estiver definida, assume "1" como padrão
+    return os.getenv("VPN_MODE", "1") == "1"
 
 
 def get_chat_model(model: str = "gpt-3.5-turbo"):
