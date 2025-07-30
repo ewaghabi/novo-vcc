@@ -90,8 +90,8 @@ def test_fallback_without_key(monkeypatch):
 
 
 def test_fallback_when_vpn_disabled(monkeypatch):
-    """Usa API pública quando VPN_MODE diferente de 1."""
-    monkeypatch.delenv("VPN_MODE", raising=False)
+    """Usa API pública quando VPN_MODE é 0."""
+    monkeypatch.setenv("VPN_MODE", "0")
     monkeypatch.setattr(openai_provider, "AzureChatOpenAI", DummyAzureChat)
     monkeypatch.setattr(openai_provider, "AzureOpenAIEmbeddings", DummyAzureEmb)
     monkeypatch.setattr(openai_provider, "Client", DummyClient)
