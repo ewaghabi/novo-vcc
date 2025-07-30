@@ -4,6 +4,13 @@ version = "0.1.0"
 description = "Sistema de análise contratual com LLM"
 authors = ["Seu Nome <seuemail@example.com>"]
 
+# Repositório interno utilizado por padrão quando `VPN_MODE` não é "0"
+# Fora da VPN, defina `VPN_MODE=0` e configure o Poetry para usar apenas o PyPI
+[[tool.poetry.source]]
+name = "nexus"
+url = "http://nexus.petrobras.com.br/nexus/repository/pypi-all/simple/"
+priority = "supplemental"
+
 [tool.poetry.dependencies]
 python = "^3.11"
 langchain = "*"
