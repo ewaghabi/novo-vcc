@@ -66,6 +66,8 @@ def test_uses_azure_when_available(monkeypatch):
     monkeypatch.setattr(openai_provider, "AzureOpenAIEmbeddings", DummyAzureEmb)
     monkeypatch.setattr(openai_provider, "Client", DummyClient)
     monkeypatch.setattr(openai_provider, "_load_internal_key", lambda: "k")
+    # Garante que o caminho do certificado exista para o teste
+    monkeypatch.setattr(openai_provider, "_CERT_PATH", Path(__file__))
 
     chat = openai_provider.get_chat_model()
     emb = openai_provider.get_embeddings()
@@ -81,6 +83,7 @@ def test_fallback_without_key(monkeypatch):
     monkeypatch.setattr(openai_provider, "AzureOpenAIEmbeddings", DummyAzureEmb)
     monkeypatch.setattr(openai_provider, "Client", DummyClient)
     monkeypatch.setattr(openai_provider, "_load_internal_key", lambda: None)
+    monkeypatch.setattr(openai_provider, "_CERT_PATH", Path(__file__))
 
     chat = openai_provider.get_chat_model()
     emb = openai_provider.get_embeddings()
@@ -96,6 +99,7 @@ def test_fallback_when_vpn_disabled(monkeypatch):
     monkeypatch.setattr(openai_provider, "AzureOpenAIEmbeddings", DummyAzureEmb)
     monkeypatch.setattr(openai_provider, "Client", DummyClient)
     monkeypatch.setattr(openai_provider, "_load_internal_key", lambda: "k")
+    monkeypatch.setattr(openai_provider, "_CERT_PATH", Path(__file__))
 
     chat = openai_provider.get_chat_model()
     emb = openai_provider.get_embeddings()
