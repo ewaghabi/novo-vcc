@@ -80,6 +80,20 @@ export VPN_MODE=1
 
 Fora da VPN, defina `VPN_MODE=0` para desabilitar o uso interno.
 
+### Repositório Nexus (padrão na VPN)
+
+O `pyproject.toml` já define a fonte `nexus` para instalação de pacotes sempre que
+`VPN_MODE` for diferente de `0` (o comportamento padrão). Assim, quem estiver na VPN
+não precisa realizar nenhuma configuração extra.
+
+Caso seja necessário executar fora da rede corporativa, exporte `VPN_MODE=0` e,
+opcionalmente, force o Poetry a utilizar apenas o PyPI:
+
+```bash
+export VPN_MODE=0
+export POETRY_SOURCE=pypi
+```
+
 ## 📑 Rotas da API
 
 | Rota | Método | Descrição | Parâmetros | Retorno |
