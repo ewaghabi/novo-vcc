@@ -1,6 +1,10 @@
 import os
+import logging
 from pathlib import Path
 from configparser import ConfigParser, ExtendedInterpolation
+
+# Cria objeto de log com o nome deste módulo
+logger = logging.getLogger(__name__)
 
 # Tenta importar dependências utilizadas internamente.
 # Todas são bibliotecas públicas e independem de acesso via VPN.
@@ -37,6 +41,8 @@ def _load_internal_key() -> str | None:
     """Lê a chave de API do arquivo de configuração interno."""
     # Caso o arquivo não exista, simplesmente retornamos ``None``
     if not _CONFIG_FILE.exists():
+        # Emite aviso informando que o arquivo esperado nao foi encontrado
+        logger.warning("Arquivo de configuração %s não encontrado", _CONFIG_FILE)
         return None
 
     cfg = ConfigParser(interpolation=ExtendedInterpolation())
@@ -52,7 +58,8 @@ def _create_azure_chat(model: str):
     if AzureChatOpenAI is None:
         return None
     if not _CERT_PATH.exists():
-        # Certificado ausente: não é possível configurar o cliente interno
+        # Certificado ausente: registra aviso e interrompe a configuração interna
+        logger.warning("Certificado %s não encontrado", _CERT_PATH)
         return None
     key = _load_internal_key()
     if not key:
@@ -71,7 +78,8 @@ def _create_azure_embeddings(model: str):
     if AzureOpenAIEmbeddings is None:
         return None
     if not _CERT_PATH.exists():
-        # Certificado ausente: devolve ``None`` para forçar o fallback
+        # Certificado ausente: devolve ``None`` e registra aviso para forçar o fallback
+        logger.warning("Certificado %s não encontrado", _CERT_PATH)
         return None
     key = _load_internal_key()
     if not key:
